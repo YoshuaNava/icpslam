@@ -46,19 +46,27 @@ public:
 		cov = Eigen::MatrixXd::Identity(6,6);
 	}
 
-	Pose6DOF operator +(Pose6DOF &p2)
+	Pose6DOF operator +=(const Pose6DOF &p2)
+	{
+		Pose6DOF p3 = compose(*this, p2);
+		pos = p3.pos;
+		rot = p3.rot;
+		return p3;
+	}
+
+	Pose6DOF operator +(const Pose6DOF &p2)
 	{
 		Pose6DOF p3 = compose(*this, p2);
 		return p3;
 	}
 
-	Pose6DOF operator -(Pose6DOF &p2)
+	Pose6DOF operator -(const Pose6DOF &p2)
 	{
 		Pose6DOF p3 = subtract(p2, *this);
 		return p3;
 	}
 
-	Pose6DOF& operator =(Pose6DOF pose)
+	Pose6DOF& operator =(const Pose6DOF pose)
 	{
 		time_stamp = pose.time_stamp;
 		pos(0) = pose.pos(0);
@@ -95,7 +103,7 @@ public:
 		return inverse(*this);
 	}
 
-	Pose6DOF compose(Pose6DOF &p2)
+	Pose6DOF compose(const Pose6DOF &p2)
 	{
 		Pose6DOF p3 = compose(*this, p2);
 		pos = p3.pos;
@@ -103,7 +111,7 @@ public:
 		return *this;
 	}
 
-	Pose6DOF subtract(Pose6DOF &p2)
+	Pose6DOF subtract(const Pose6DOF &p2)
 	{
 		Pose6DOF p3 = subtract(*this, p2);
 		pos = p3.pos;
@@ -120,17 +128,17 @@ public:
 		return *this;
 	}
 
-	double distanceEuclidean(Pose6DOF p2)
+	double distanceEuclidean(const Pose6DOF p2)
 	{
 		return distanceEuclidean(*this, p2);
 	}
 
-	static double distanceEuclidean(Pose6DOF &p1, Pose6DOF &p2)
+	static double distanceEuclidean(const Pose6DOF &p1, const Pose6DOF &p2)
 	{
 		return subtract(p1, p2).pos.norm();
 	}
 
-	static Pose6DOF compose(Pose6DOF &p1, Pose6DOF &p2)
+	static Pose6DOF compose(const Pose6DOF &p1, const Pose6DOF &p2)
 	{
 		Pose6DOF p3;
 		p3.time_stamp = p2.time_stamp;
@@ -140,7 +148,7 @@ public:
 		return p3;
 	}
 
-	static Pose6DOF subtract(Pose6DOF &p1, Pose6DOF &p2)
+	static Pose6DOF subtract(const Pose6DOF &p1, const Pose6DOF &p2)
 	{
 		Pose6DOF p3;
 		p3.time_stamp = p1.time_stamp;
@@ -151,7 +159,7 @@ public:
 		return p3;
 	}
 
-	static Pose6DOF inverse(Pose6DOF &pose)
+	static Pose6DOF inverse(const Pose6DOF &pose)
 	{
 		Pose6DOF inv;
 		inv.pos = (pose.rot.inverse() *  pose.pos) * -1.0;

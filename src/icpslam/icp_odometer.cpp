@@ -99,12 +99,12 @@ bool ICPOdometer::isOdomReady()
 	return odom_inited_;
 }
 
-Pose6DOF ICPOdometer::getFirstPoseICPOdometry()
+Pose6DOF ICPOdometer::getFirstPose()
 {
 	return icp_odom_poses_.front(); 
 }
 
-Pose6DOF ICPOdometer::getLatestPoseICPOdometry() 
+Pose6DOF ICPOdometer::getLatestPose() 
 {
 	return icp_odom_poses_.back();
 }
@@ -118,6 +118,8 @@ void ICPOdometer::getEstimates(pcl::PointCloud<pcl::PointXYZ>::Ptr *cloud, Pose6
 
 	*new_transform = new_transform_;
 
+	icp_latest_transform_.setIdentity();
+
 	this->new_transform_ = false;
 }
 
@@ -127,33 +129,35 @@ bool ICPOdometer::updateICPOdometry(Eigen::Matrix4d T)
 {
 	// ROS_INFO("ICP odometry update!");
 	Pose6DOF transform(T, ros::Time().now());
-	Pose6DOF prev_pose = getLatestPoseICPOdometry();
+	Pose6DOF prev_pose = getLatestPose();
 	Pose6DOF new_pose = prev_pose + transform;
+	icp_latest_transform_ += transform;
 
-	if(transform.norm() < 0.00001)
-		return false;
-
-	icp_latest_transform_ = transform;
-	new_transform_ = true;
-
-	icp_odom_poses_.push_back(new_pose);
-	publishOdometry(new_pose.pos, new_pose.rot, map_frame_, odom_frame_, ros::Time().now(), &icp_odom_pub_);
-	insertPoseInPath(new_pose.toROSPose(), map_frame_, ros::Time().now(), icp_odom_path_);
-	icp_odom_path_.header.stamp = ros::Time().now();
-	icp_odom_path_.header.frame_id = map_frame_;
-	icp_odom_path_pub_.publish(icp_odom_path_);
-
-	if(verbosity_level_ >= 1)
+	if(verbosity_level_ >= 2)
 	{
 		std::cout << "#####		ICP odometry		#####" << std::endl;
-		std::cout << "Initial pose:\n" << getFirstPoseICPOdometry().toStringQuat("   ");
+		std::cout << "Initial pose:\n" << getFirstPose().toStringQuat("   ");
 		std::cout << "Prev odometry pose:\n" << prev_pose.toStringQuat("   ");
 		std::cout << "Cloud transform = " << transform.toStringQuat("   ");
 		std::cout << "ICP odometry pose = " << new_pose.toStringQuat("   ");
 		std::cout << std::endl;
 	}
 
-	return true;
+	if(transform.norm() < 0.00001)
+		return false;
+	else
+	{
+		new_transform_ = true;
+
+		icp_odom_poses_.push_back(new_pose);
+		publishOdometry(new_pose.pos, new_pose.rot, map_frame_, odom_frame_, ros::Time().now(), &icp_odom_pub_);
+		insertPoseInPath(new_pose.toROSPose(), map_frame_, ros::Time().now(), icp_odom_path_);
+		icp_odom_path_.header.stamp = ros::Time().now();
+		icp_odom_path_.header.frame_id = map_frame_;
+		icp_odom_path_pub_.publish(icp_odom_path_);
+
+		return true;
+	}
 }
 
 void ICPOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg)

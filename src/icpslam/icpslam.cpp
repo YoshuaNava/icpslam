@@ -50,7 +50,8 @@ int main(int argc, char** argv)
 			{
 				ROS_INFO("Iteration %lu", iter);
 				ROS_INFO("	Initial pose inserted");
-				pose_optimizer->setInitialPose(robot_odom_pose);
+				Pose6DOF initial_pose = Pose6DOF::getIdentity();
+				pose_optimizer->setInitialPose(initial_pose);
 				num_vertices++;
 				prev_keyframe_pose = icp_odom_pose;
 				prev_robot_odom_pose = robot_odom_pose;
@@ -83,17 +84,15 @@ int main(int argc, char** argv)
 				}
 			}
 
-			// if(new_transform_rodom)
-			// {
-			// 	if ((Pose6DOF::distanceEuclidean(robot_odom_pose, prev_robot_odom_pose) > VERTEX_DIST_THRESH) && (num_keyframes > 0))
-			// 	{
-			// 		ROS_INFO("  Odometry vertex inserted! ID %d", curr_vertex_key+1);
-			// 		pose_optimizer->addNewFactor(&cloud, robot_odom_transform, robot_odom_pose, &curr_vertex_key, false);
-			// 		num_vertices++;
-			// 		prev_robot_odom_pose = robot_odom_pose;
-			// 		new_transform_rodom = false;
-			// 	}
-			// }
+			if(new_transform_rodom)
+				if ((Pose6DOF::distanceEuclidean(robot_odom_pose, prev_robot_odom_pose) > VERTEX_DIST_THRESH) && (num_keyframes > 0))
+				{
+					ROS_INFO("  Odometry vertex inserted! ID %lu", curr_vertex_key+1);
+					pose_optimizer->addNewFactor(&cloud, robot_odom_transform, robot_odom_pose, &curr_vertex_key, false);
+					num_vertices++;
+					prev_robot_odom_pose = robot_odom_pose;
+					new_transform_rodom = false;
+				}
 
 
 			if(run_pose_optimization)

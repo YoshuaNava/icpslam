@@ -18,7 +18,7 @@
 
         <param name="aggregate_clouds" type="bool" value="false" />
 		<param name="laser_cloud_topic" type="string" value="/front/cloud" />
-		<param name="num_clouds_skip" value="10" />
+		<param name="num_clouds_skip" value="20" />
 <!-- 		<param name="laser_cloud_topic" type="string" value="/spinning_lidar/assembled_cloud" />
 		<param name="num_clouds_skip" value="0" /> -->
         <param name="prev_cloud_topic" type="string" value="/icpslam/prev_cloud" />
@@ -26,6 +26,8 @@
         <param name="increment_cloud_topic" type="string" value="/icpslam/increment_cloud" />
         <param name="map_cloud_topic" type="string" value="/icpslam/map_cloud" />
 
+        <!-- Available optimization backends: gtsam, g2o -->
+        <param name="optimization_backend" value="gtsam" />
 		<param name="graph_edges_topic" type="string" value="/icpslam/graph_edges" />
 		<param name="graph_vertices_topic" type="string" value="/icpslam/graph_vertices" />
 		<param name="graph_keyframes_topic" type="string" value="/icpslam/graph_keyframes" />

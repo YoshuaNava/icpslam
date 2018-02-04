@@ -82,12 +82,12 @@ bool RobotOdometer::isOdomReady()
 	return odom_inited_;
 }
 
-Pose6DOF RobotOdometer::getFirstPoseRobotOdometry()
+Pose6DOF RobotOdometer::getFirstPose()
 {
 	return robot_odom_poses_.front(); 
 }
 
-Pose6DOF RobotOdometer::getLatestPoseRobotOdometry() 
+Pose6DOF RobotOdometer::getLatestPose() 
 {
 	return robot_odom_poses_.back(); 
 }
@@ -139,7 +139,7 @@ void RobotOdometer::robotOdometryCallback(const nav_msgs::Odometry::ConstPtr& ro
 	}
 	else
 	{
-		Pose6DOF prev_pose = getLatestPoseRobotOdometry();
+		Pose6DOF prev_pose = getLatestPose();
 		odom_latest_transform_ = pose_debug - prev_pose;
 		robot_odom_poses_.push_back(pose_debug);
 		if(verbosity_level_ >= 2)

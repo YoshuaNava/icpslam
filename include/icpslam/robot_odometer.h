@@ -66,9 +66,9 @@ public:
 
 	bool isOdomReady();
 
-	Pose6DOF getFirstPoseRobotOdometry();
+	Pose6DOF getFirstPose();
 
- 	Pose6DOF getLatestPoseRobotOdometry(); 
+ 	Pose6DOF getLatestPose(); 
 
 	void getEstimates(Pose6DOF *latest_odom_transform, Pose6DOF *odom_pose, bool *new_transform);
 

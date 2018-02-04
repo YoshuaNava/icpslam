@@ -37,7 +37,6 @@ void PoseOptimizerGTSAM::init()
     isam_.reset(new gtsam::ISAM2(parameters));
 
     namespace_ = "icpslam";
-    pose_opt_iters = 30;
 
     loadParameters();
     advertisePublishers();
@@ -142,7 +141,7 @@ void PoseOptimizerGTSAM::addNewFactor(PointCloud::Ptr *new_cloud_ptr, Pose6DOF t
     curr_vertex_key_++;
     curr_edge_key_++;
 
-    // this->refinePoseGraph();
+    this->refinePoseGraph();
 }
 
 void PoseOptimizerGTSAM::publishDebugTransform(Pose6DOF robot_in_parent, std::string parent_frame, std::string child_frame)

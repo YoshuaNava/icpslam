@@ -75,9 +75,9 @@ public:
 
 	bool isOdomReady();
 
-	Pose6DOF getFirstPoseICPOdometry();
+	Pose6DOF getFirstPose();
 	
-	Pose6DOF getLatestPoseICPOdometry();
+	Pose6DOF getLatestPose();
 
 	void getEstimates(pcl::PointCloud<pcl::PointXYZ>::Ptr *cloud, Pose6DOF *latest_icp_transform, Pose6DOF *icp_pose, bool *new_transform);
 
