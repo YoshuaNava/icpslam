@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<launch> 
+
+    <node name="icpslam_node" pkg="icpslam" type="icpslam_online" output="screen" >
+        <param name="verbosity_level" value="1" />
+        <param name="world_frame" type="string" value="world" />
+        <param name="map_frame" type="string" value="map" />
+        <param name="odom_frame" type="string" value="odom" />
+        <param name="robot_frame" type="string" value="base_link" />
+        <param name="laser_frame" type="string" value="laser" />
+
+        <param name="robot_odom_topic" type="string" value="/odometry/filtered" />
+        <param name="icp_odom_topic" type="string" value="/icpslam/odom" />
+        <param name="robot_odom_path_topic" type="string" value="/icpslam/robot_odom_path" />
+        <param name="icp_odom_path_topic" type="string" value="/icpslam/icp_odom_path" />
+        <param name="true_path_topic" type="string" value="/icpslam/true_path" />
+
+
+        <param name="aggregate_clouds" type="bool" value="false" />
+		<param name="laser_cloud_topic" type="string" value="/front/cloud" />
+		<param name="num_clouds_skip" value="10" />
+<!-- 		<param name="laser_cloud_topic" type="string" value="/spinning_lidar/assembled_cloud" />
+		<param name="num_clouds_skip" value="0" /> -->
+        <param name="prev_cloud_topic" type="string" value="/icpslam/prev_cloud" />
+        <param name="aligned_cloud_topic" type="string" value="/icpslam/aligned_cloud" />
+        <param name="increment_cloud_topic" type="string" value="/icpslam/increment_cloud" />
+        <param name="map_cloud_topic" type="string" value="/icpslam/map_cloud" />
+
+		<param name="graph_edges_topic" type="string" value="/icpslam/graph_edges" />
+		<param name="graph_vertices_topic" type="string" value="/icpslam/graph_vertices" />
+		<param name="graph_keyframes_topic" type="string" value="/icpslam/graph_keyframes" />
+
+		<param name="publish_map_transform" type="bool" value="false" />
+    </node>
+
+    <node name="lidar_scan_to_cloud_node" pkg="spinning_lidar_utils" type="lidar_scan_to_cloud" output="screen" />
+
+<!--     <node name="gazebo_ref_pub_node" pkg="spinning_lidar_utils" type="gazebo_ref_frame_pub" output="screen">
+        <param name="parent_frame" type="string" value="map" />
+        <param name="child_frame" type="string" value="odom" />
+        <param name="robot_frame" type="string" value="base_link" />
+		<param name="robot_name" type="string" value="ridgeback_yumi" />
+    </node> -->
+
+</launch>
