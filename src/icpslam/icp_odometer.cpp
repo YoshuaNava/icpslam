@@ -62,6 +62,7 @@ void ICPOdometer::loadParameters()
 	// Input robot odometry and point cloud topics
 	nh_.param("laser_cloud_topic", laser_cloud_topic_, std::string("spinning_lidar/assembled_cloud"));
 
+	nh_.param("voxel_leaf_size", voxel_leaf_size_, 0.05);
 	nh_.param("aggregate_clouds", aggregate_clouds_, false);
 	nh_.param("num_clouds_skip", num_clouds_skip_, 0);
 
@@ -124,6 +125,14 @@ void ICPOdometer::getEstimates(pcl::PointCloud<pcl::PointXYZ>::Ptr *cloud, Pose6
 }
 
 
+void ICPOdometer::voxelFilterCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr *input, pcl::PointCloud<pcl::PointXYZ>::Ptr *output)
+{
+	pcl::VoxelGrid<pcl::PointXYZ> voxel_filter;
+	voxel_filter.setInputCloud(*input);
+	voxel_filter.setLeafSize(voxel_leaf_size_, voxel_leaf_size_, voxel_leaf_size_);
+	voxel_filter.filter(**output);
+}
+
 
 bool ICPOdometer::updateICPOdometry(Eigen::Matrix4d T)
 {
@@ -167,10 +176,7 @@ void ICPOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
 	// start = std::clock();
 	pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZ>());
 	pcl::fromROSMsg(*cloud_msg, *input_cloud);
-	pcl::VoxelGrid<pcl::PointXYZ> voxel_filter;
-	voxel_filter.setInputCloud(input_cloud);
-	voxel_filter.setLeafSize(0.05, 0.05, 0.05);
-	voxel_filter.filter(*curr_cloud_);
+	voxelFilterCloud(&input_cloud, &curr_cloud_);
 
 	if(prev_cloud_->points.size() == 0)
 	{
@@ -181,12 +187,13 @@ void ICPOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
 	// Registration
 	// GICP is said to be better, but what about NICP from Serafin?
 	pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-	icp.setInputSource(curr_cloud_);
-	icp.setInputTarget(prev_cloud_);
 	icp.setMaximumIterations(ICP_MAX_ITERS);
 	icp.setTransformationEpsilon(ICP_EPSILON);
 	icp.setMaxCorrespondenceDistance(ICP_MAX_CORR_DIST);
 	icp.setRANSACIterations(0);
+	icp.setMaximumOptimizerIterations(50);
+	icp.setInputSource(curr_cloud_);
+	icp.setInputTarget(prev_cloud_);
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr prev_cloud_in_curr_frame(new pcl::PointCloud<pcl::PointXYZ>()),
 										curr_cloud_in_prev_frame(new pcl::PointCloud<pcl::PointXYZ>()),
@@ -197,6 +204,7 @@ void ICPOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
 	if(icp.hasConverged())
 	{
 		// ROS_INFO("		ICP converged");
+		std::cout << "Estimated T:\n" << T << std::endl;
 		Eigen::Matrix4d T_inv = T.inverse();
 		pcl::transformPointCloud(*prev_cloud_, *prev_cloud_in_curr_frame, T_inv);
 		if(clouds_skipped_ >= num_clouds_skip_)

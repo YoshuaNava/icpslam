@@ -54,6 +54,7 @@ private:
 
 	// Translations and rotations estimated by ICP
 	bool new_transform_;
+	double voxel_leaf_size_;
 	int clouds_skipped_, num_clouds_skip_;
 	bool aggregate_clouds_;
 	Pose6DOF icp_latest_transform_;
@@ -80,6 +81,8 @@ public:
 	Pose6DOF getLatestPose();
 
 	void getEstimates(pcl::PointCloud<pcl::PointXYZ>::Ptr *cloud, Pose6DOF *latest_icp_transform, Pose6DOF *icp_pose, bool *new_transform);
+
+	void voxelFilterCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr *input, pcl::PointCloud<pcl::PointXYZ>::Ptr *output);
 
 	bool updateICPOdometry(Eigen::Matrix4d T);
 
