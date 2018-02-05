@@ -84,6 +84,8 @@ public:
 
 	void voxelFilterCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr *input, pcl::PointCloud<pcl::PointXYZ>::Ptr *output);
 
+	void publishPath();
+
 	bool updateICPOdometry(Eigen::Matrix4d T);
 
 	void laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg);

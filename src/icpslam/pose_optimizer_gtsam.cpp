@@ -117,7 +117,7 @@ void PoseOptimizerGTSAM::extendGraph(Pose6DOF &transform, Pose6DOF &pose, bool i
     latest_pose = toPose6DOF(graph_values_.at<gtsam::Pose3>(curr_vertex_key_-1));
     publishDebugTransform(latest_pose, "debug", odom_frame_);
 
-    if(verbosity_level_ >= 1)
+    if(verbosity_level_ >= 2)
     {
         std::cout << "Vertex " << curr_vertex_key_ << "\n Pose: \n" << pose;
         std::cout << "Transform: \n" << transform;
@@ -171,7 +171,9 @@ void PoseOptimizerGTSAM::refinePoseGraph()
         graph_poses_.find(key)->second.rot = v_pose.rot;
         Pose6DOF new_pose = graph_poses_.find(key)->second;
     }
-    ROS_INFO("      Vertices refined\n\n");
+    
+    if(verbosity_level_ >= 2)
+        ROS_INFO("      Vertices refined\n\n");
 }
 
 bool PoseOptimizerGTSAM::checkLoopClosure()

@@ -54,13 +54,21 @@ public:
 		return p3;
 	}
 
-	Pose6DOF operator +(const Pose6DOF &p2)
+	Pose6DOF operator -=(const Pose6DOF &p2)
+	{
+		Pose6DOF p3 = subtract(p2, *this);
+		pos = p3.pos;
+		rot = p3.rot;
+		return p3;
+	}
+
+	Pose6DOF operator +(const Pose6DOF &p2) const
 	{
 		Pose6DOF p3 = compose(*this, p2);
 		return p3;
 	}
 
-	Pose6DOF operator -(const Pose6DOF &p2)
+	Pose6DOF operator -(const Pose6DOF &p2) const
 	{
 		Pose6DOF p3 = subtract(p2, *this);
 		return p3;
@@ -87,7 +95,7 @@ public:
 		return (((this->pos - pose.pos).norm() < EQUALITY_THRESH) && (fabs(this->rot.dot(pose.rot)) < 1-EQUALITY_THRESH));
 	}
 
-	double norm()
+	double norm() const
 	{
 		return pos.norm();
 	}
@@ -98,7 +106,7 @@ public:
 		return os;
 	}
 
-	Pose6DOF inverse()
+	Pose6DOF inverse() const
 	{
 		return inverse(*this);
 	}
@@ -128,7 +136,7 @@ public:
 		return *this;
 	}
 
-	double distanceEuclidean(const Pose6DOF p2)
+	double distanceEuclidean(const Pose6DOF p2) const
 	{
 		return distanceEuclidean(*this, p2);
 	}
@@ -318,7 +326,7 @@ public:
 		rot.normalize();
 	}
 
-	Eigen::Matrix4d toTMatrix()
+	Eigen::Matrix4d toTMatrix() const
 	{
 		Eigen::Matrix4d T;
 		T.setIdentity();
@@ -327,7 +335,7 @@ public:
 		return T;
 	}
 
-	tf::Transform toTFTransform()
+	tf::Transform toTFTransform() const
 	{
 		tf::Transform transform;
 		transform.setOrigin(tf::Vector3(pos(0), pos(1), pos(2)));
@@ -335,7 +343,7 @@ public:
 		return transform;
 	}
 
-	tf::Pose toTFPose()
+	tf::Pose toTFPose() const
 	{
 		tf::Pose pose;
 		pose.setOrigin(tf::Vector3(pos(0), pos(1), pos(2)));
@@ -343,7 +351,7 @@ public:
 		return pose;
 	}
 
-	geometry_msgs::Point toROSPoint()
+	geometry_msgs::Point toROSPoint() const
 	{
 		geometry_msgs::Point p;
 		p.x = pos(0);
@@ -353,7 +361,7 @@ public:
 		return p;
 	}
 
-	geometry_msgs::Pose toROSPose()
+	geometry_msgs::Pose toROSPose() const
 	{
 		geometry_msgs::Pose pose;
 		pose.position.x = pos(0);
@@ -366,7 +374,7 @@ public:
 		return pose;
 	}
 
-	geometry_msgs::PoseWithCovariance toROSPoseWithCovariance()
+	geometry_msgs::PoseWithCovariance toROSPoseWithCovariance() const
 	{
 		geometry_msgs::PoseWithCovariance pose_cov;
 		pose_cov.pose.position.x = pos(0);

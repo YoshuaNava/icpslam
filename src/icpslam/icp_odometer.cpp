@@ -133,6 +133,16 @@ void ICPOdometer::voxelFilterCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr *input, p
 	voxel_filter.filter(**output);
 }
 
+void ICPOdometer::publishPath()
+{
+	Pose6DOF latest_pose = getLatestPose();
+	publishOdometry(latest_pose.pos, latest_pose.rot, map_frame_, odom_frame_, ros::Time().now(), &icp_odom_pub_);
+	insertPoseInPath(latest_pose.toROSPose(), map_frame_, ros::Time().now(), icp_odom_path_);
+	icp_odom_path_.header.stamp = ros::Time().now();
+	icp_odom_path_.header.frame_id = map_frame_;
+	icp_odom_path_pub_.publish(icp_odom_path_);
+}
+
 
 bool ICPOdometer::updateICPOdometry(Eigen::Matrix4d T)
 {
@@ -152,18 +162,12 @@ bool ICPOdometer::updateICPOdometry(Eigen::Matrix4d T)
 		std::cout << std::endl;
 	}
 
-	if(transform.norm() < 0.00001)
-		return false;
-	else
+	// if(transform.norm() < 0.00001)
+	// 	return false;
+	// else
 	{
 		new_transform_ = true;
-
-		icp_odom_poses_.push_back(new_pose);
-		publishOdometry(new_pose.pos, new_pose.rot, map_frame_, odom_frame_, ros::Time().now(), &icp_odom_pub_);
-		insertPoseInPath(new_pose.toROSPose(), map_frame_, ros::Time().now(), icp_odom_path_);
-		icp_odom_path_.header.stamp = ros::Time().now();
-		icp_odom_path_.header.frame_id = map_frame_;
-		icp_odom_path_pub_.publish(icp_odom_path_);
+		publishPath();
 
 		return true;
 	}
@@ -191,7 +195,6 @@ void ICPOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
 	icp.setTransformationEpsilon(ICP_EPSILON);
 	icp.setMaxCorrespondenceDistance(ICP_MAX_CORR_DIST);
 	icp.setRANSACIterations(0);
-	icp.setMaximumOptimizerIterations(50);
 	icp.setInputSource(curr_cloud_);
 	icp.setInputTarget(prev_cloud_);
 
@@ -204,7 +207,7 @@ void ICPOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
 	if(icp.hasConverged())
 	{
 		// ROS_INFO("		ICP converged");
-		std::cout << "Estimated T:\n" << T << std::endl;
+		// std::cout << "Estimated T:\n" << T << std::endl;
 		Eigen::Matrix4d T_inv = T.inverse();
 		pcl::transformPointCloud(*prev_cloud_, *prev_cloud_in_curr_frame, T_inv);
 		if(clouds_skipped_ >= num_clouds_skip_)

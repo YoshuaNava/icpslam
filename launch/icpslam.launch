@@ -16,14 +16,15 @@
         <param name="true_path_topic" type="string" value="/icpslam/true_path" />
 
 
+        <param name="keyframes_window" value="1" />
         <param name="voxel_leaf_size" value="0.05" />
         <param name="aggregate_clouds" type="bool" value="false" />
 		<param name="laser_cloud_topic" type="string" value="/front/cloud" />
-		<param name="num_clouds_skip" value="0" />
+		<param name="num_clouds_skip" value="10" />
 
 <!-- 		<param name="laser_cloud_topic" type="string" value="/spinning_lidar/assembled_cloud" />
-		<param name="num_clouds_skip" value="0" /> -->
-
+		<param name="num_clouds_skip" value="0" />
+ -->
 <!--         <param name="laser_cloud_topic" type="string" value="/velodyne_points" />
         <param name="num_clouds_skip" value="20" />
         <param name="voxel_leaf_size" value="0.5" />
@@ -33,6 +34,7 @@
         <param name="aligned_cloud_topic" type="string" value="/icpslam/aligned_cloud" />
         <param name="increment_cloud_topic" type="string" value="/icpslam/increment_cloud" />
         <param name="map_cloud_topic" type="string" value="/icpslam/map_cloud" />
+        <param name="nn_cloud_topic" type="string" value="/icpslam/nn_cloud" />
 
         <!-- Available optimization backends: gtsam, g2o -->
         <param name="optimization_backend" value="gtsam" />
