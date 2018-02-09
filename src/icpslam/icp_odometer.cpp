@@ -167,6 +167,7 @@ bool ICPOdometer::updateICPOdometry(Eigen::Matrix4d T)
 	// else
 	{
 		new_transform_ = true;
+		icp_odom_poses_.push_back(new_pose);
 		publishPath();
 
 		return true;

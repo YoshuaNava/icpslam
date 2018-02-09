@@ -134,7 +134,7 @@ bool OctreeMapper::estimateTransformICP(const pcl::PointCloud<pcl::PointXYZ>::Pt
 	if(icp.hasConverged())
 	{
     *transform = Pose6DOF(T, ros::Time().now());
-    std::cout << "refined transform:\n" << *transform;
+    std::cout << "Refined transform:\n" << *transform;
     return true;
   }
 
@@ -166,8 +166,9 @@ bool OctreeMapper::refineTransformICP(const pcl::PointCloud<pcl::PointXYZ>::Ptr&
   transformCloudToPoseFrame(*nn_cloud_in_map, prev_pose.inverse(), &*nn_cloud);
 
   if(verbosity_level_ >= 1)
-    publishPointCloud(nn_cloud_in_map, map_frame_, ros::Time().now(), &nn_cloud_pub_);
-    // publishPointCloud(cloud, robot_frame_, ros::Time().now(), &nn_cloud_pub_);
+  {
+    publishPointCloud(nn_cloud, robot_frame_, ros::Time().now(), &nn_cloud_pub_);
+  }
 
   if(estimateTransformICP(cloud, nn_cloud, transform))
   {

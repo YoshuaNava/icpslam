@@ -14,17 +14,19 @@
         <param name="robot_odom_path_topic" type="string" value="/icpslam/robot_odom_path" />
         <param name="icp_odom_path_topic" type="string" value="/icpslam/icp_odom_path" />
         <param name="true_path_topic" type="string" value="/icpslam/true_path" />
+        <param name="refined_path_topic" type="string" value="/icpslam/refined_path" />
 
 
         <param name="keyframes_window" value="1" />
         <param name="voxel_leaf_size" value="0.05" />
         <param name="aggregate_clouds" type="bool" value="false" />
-		<param name="laser_cloud_topic" type="string" value="/front/cloud" />
-		<param name="num_clouds_skip" value="10" />
 
-<!-- 		<param name="laser_cloud_topic" type="string" value="/spinning_lidar/assembled_cloud" />
+		<param name="laser_cloud_topic" type="string" value="/front/cloud" />
+		<param name="num_clouds_skip" value="5" />
+
+		<param name="laser_cloud_topic" type="string" value="/spinning_lidar/assembled_cloud" />
 		<param name="num_clouds_skip" value="0" />
- -->
+
 <!--         <param name="laser_cloud_topic" type="string" value="/velodyne_points" />
         <param name="num_clouds_skip" value="20" />
         <param name="voxel_leaf_size" value="0.5" />
@@ -45,13 +47,6 @@
 		<param name="publish_map_transform" type="bool" value="false" />
     </node>
 
-    <node name="lidar_scan_to_cloud_node" pkg="spinning_lidar_utils" type="lidar_scan_to_cloud" output="screen" />
-
-<!--     <node name="gazebo_ref_pub_node" pkg="spinning_lidar_utils" type="gazebo_ref_frame_pub" output="screen">
-        <param name="parent_frame" type="string" value="map" />
-        <param name="child_frame" type="string" value="odom" />
-        <param name="robot_frame" type="string" value="base_link" />
-		<param name="robot_name" type="string" value="ridgeback_yumi" />
-    </node> -->
+    <!-- <node name="lidar_scan_to_cloud_node" pkg="spinning_lidar_utils" type="lidar_scan_to_cloud" output="screen" /> -->
 
 </launch>

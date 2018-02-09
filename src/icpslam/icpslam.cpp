@@ -59,10 +59,11 @@ int main(int argc, char** argv)
 				if(num_keyframes > 0)
 				{
 					Pose6DOF refined_transform;
+					std::cout << "Original transform:\n" << icp_transform;
 					bool icp_refined = octree_mapper.refineTransformICP(cloud, prev_icp_odom_pose, &refined_transform);
 					if(icp_refined)
 					{
-						icp_transform = refined_transform;
+						// icp_transform = refined_transform;
 						icp_odom_pose = prev_icp_odom_pose + icp_transform;
 					}
 				}
