@@ -23,3 +23,8 @@ A SLAM system that employs 2D and 3D LIDAR measurements
 - Technical improvements
   - [ ] Keep a global list of Keyframes, with attributes such as key, cloud, pose, transform.
   - [ ] Make everything thread safe.
+- [ ] Wiki
+  - [ ] Installation.
+  - [ ] Parameters.
+  - [ ] ROS nodes.
+  - [ ] Troubleshooting.
