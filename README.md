@@ -1,5 +1,5 @@
 # icpslam
-A SLAM system that employs 2D and 3D LIDAR measurements
+A basic SLAM system that employs 2D and 3D LIDAR measurements
 
 
 ## TODO
@@ -22,6 +22,7 @@ A SLAM system that employs 2D and 3D LIDAR measurements
   - [ ] Re-localization: compare current cloud to keyframes stored.
 - Technical improvements
   - [ ] Keep a global list of Keyframes, with attributes such as key, cloud, pose, transform.
+  - [ ] Make odometry, localization and mapping nodes run concurrently.
   - [ ] Make everything thread safe.
 - [ ] Wiki
   - [X] Installation.
