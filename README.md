@@ -11,7 +11,7 @@ A basic SLAM system that employs 2D and 3D LIDAR measurements
 - [X] Mapping
   - [X] Implement a class to handle the current map with an Octree.
   - [X] Localization on currently built map. (inspiration: [BLAM!](https://github.com/erik-nelson/blam))
-- [ ] Pose graph optimization
+- [X] Pose graph optimization
   - [X] Abstract class for pose optimization.
   - [X] Visualization with ROS markers.
   - [X] Integrate g2o.
