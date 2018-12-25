@@ -1,15 +1,14 @@
-
-#ifndef GEOMETRIC_UTILS_H
-#define GEOMETRIC_UTILS_H
+#pragma once
 
 #include <ros/ros.h>
-#include <std_msgs/Float64.h>
+
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseWithCovariance.h>
 #include <geometry_msgs/Transform.h>
 #include <nav_msgs/Odometry.h>
-#include <tf/transform_listener.h>
+#include <std_msgs/Float64.h>
 #include <tf/transform_datatypes.h>
+
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
@@ -42,5 +41,3 @@ std::string getStringFromQuaternion(Eigen::Quaterniond q);
 tf::Pose differenceBetweenPoses(geometry_msgs::Pose p1, geometry_msgs::Pose p2);
 
 double lengthOfVector(tf::Pose vector);
-
-#endif

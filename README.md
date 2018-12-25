@@ -7,7 +7,7 @@ A basic SLAM system that employs 2D and 3D LIDAR measurements
 - [X] Handle robot odometry.
 - [X] Handle absolute robot pose from Gazebo.
 - [X] Estimate odometry using ICP on LIDAR measurements.
-  - [X] Cloud skipping for coping with sensors with high output frequency.
+  - [X] Cloud skipping for coping with high frequency range measurements.
 - [X] Mapping
   - [X] Implement a class to handle the current map with an Octree.
   - [X] Localization on currently built map. (inspiration: [BLAM!](https://github.com/erik-nelson/blam))
