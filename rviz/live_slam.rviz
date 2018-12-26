@@ -6,7 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /Robot odometry1/Odometry1/Covariance1
+        - /Robot Odometry1/Odometry1/Covariance1
       Splitter Ratio: 0.5590659379959106
     Tree Height: 768
   - Class: rviz/Selection
@@ -216,6 +216,8 @@ Visualization Manager:
           Value: true
         left_side_cover_link:
           Value: false
+        map:
+          Value: true
         mid_mount:
           Value: false
         odom:
@@ -244,46 +246,47 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        odom:
-          base_link:
-            chassis_link:
-              axle_link:
-                front_rocker_link:
-                  front_left_wheel_link:
-                    {}
-                  front_right_wheel_link:
-                    {}
-                rear_rocker_link:
-                  rear_left_wheel_link:
-                    {}
-                  rear_right_wheel_link:
-                    {}
-              front_cover_link:
-                {}
-              front_lights_link:
-                {}
-              imu_link:
-                {}
-              left_side_cover_link:
-                {}
-              rear_cover_link:
-                {}
-              rear_lights_link:
-                {}
-              right_side_cover_link:
-                {}
-              top_link:
-                {}
-            mid_mount:
-              {}
-            sensor_pedestal:
-              laser_mount_base_link:
-                laser_mount:
-                  laser_axis:
-                    laser:
+        map:
+          odom:
+            base_link:
+              chassis_link:
+                axle_link:
+                  front_rocker_link:
+                    front_left_wheel_link:
                       {}
-                  xsens:
-                    {}
+                    front_right_wheel_link:
+                      {}
+                  rear_rocker_link:
+                    rear_left_wheel_link:
+                      {}
+                    rear_right_wheel_link:
+                      {}
+                front_cover_link:
+                  {}
+                front_lights_link:
+                  {}
+                imu_link:
+                  {}
+                left_side_cover_link:
+                  {}
+                rear_cover_link:
+                  {}
+                rear_lights_link:
+                  {}
+                right_side_cover_link:
+                  {}
+                top_link:
+                  {}
+              mid_mount:
+                {}
+              sensor_pedestal:
+                laser_mount_base_link:
+                  laser_mount:
+                    laser_axis:
+                      laser:
+                        {}
+                    xsens:
+                      {}
       Update Interval: 0
       Value: true
     - Class: rviz/Group
@@ -291,8 +294,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 2.4926648139953613
-            Min Value: -0.03626984357833862
+            Max Value: 2.5508766174316406
+            Min Value: -0.11005192250013351
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -497,7 +500,7 @@ Visualization Manager:
           Unreliable: false
           Value: true
       Enabled: true
-      Name: Robot odometry
+      Name: Robot Odometry
     - Class: rviz/Group
       Displays:
         - Alpha: 1
@@ -584,7 +587,20 @@ Visualization Manager:
           Unreliable: false
           Value: true
       Enabled: true
-      Name: Octree mapper
+      Name: Octree Mapper
+    - Class: rviz/Group
+      Displays:
+        - Class: rviz/MarkerArray
+          Enabled: true
+          Marker Topic: /icpslam/pose_graph
+          Name: MarkerArray
+          Namespaces:
+            edges: true
+            icp_nodes: true
+          Queue Size: 100
+          Value: true
+      Enabled: true
+      Name: Pose Graph
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
