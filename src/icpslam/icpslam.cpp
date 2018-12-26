@@ -1,16 +1,63 @@
 
 #include "icpslam/icpslam.h"
 
+#include "utils/geometric_utils.h"
+
 IcpSlam::IcpSlam(const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
-    : nh_(nh), pnh_(pnh), robot_odometer_(nh, pnh), icp_odometer_(nh, pnh), octree_mapper_(nh, pnh), pose_graph_(new pose_graph_utils::PoseGraphG2O()) {
+    : nh_(nh),
+      pnh_(pnh),
+      robot_odometer_(nh, pnh),
+      icp_odometer_(nh, pnh),
+      octree_mapper_(nh, pnh),
+      pose_graph_(new pose_graph_utils::PoseGraphG2O()),
+      T_map_to_odom_(Eigen::Isometry3d::Identity()) {
+  loadParameters();
   mainLoop();
+}
+
+void IcpSlam::loadParameters() {
+  pnh_.param("map_frame", map_frame_, std::string("map"));
+  pnh_.param("odom_frame", odom_frame_, std::string("odom"));
+  pnh_.param("robot_frame", robot_frame_, std::string("base_link"));
+  pnh_.param("laser_frame", laser_frame_, std::string("laser"));
+
+  nh_.param("keyframes_window", keyframes_window_, 1);
+}
+
+void IcpSlam::addNewKeyframe(
+    const ros::Time& stamp, const Pose6DOF& pose_in_odom, const Pose6DOF& pose_in_map, const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) {
+  std::cout << "hola" << std::endl;
+}
+
+void IcpSlam::computeMapToOdomTransform() {
+  if (keyframes_.size() > 0) {
+    const auto& keyframe = keyframes_.back();
+    T_map_to_odom_ = keyframe->graph_node_->estimate() * keyframe->pose_in_odom_.toEigenIsometry3().inverse();
+  } else {
+    T_map_to_odom_ = Eigen::Isometry3d::Identity();
+  }
+}
+
+void IcpSlam::publishMapToOdomTf(const ros::Time& stamp, const Pose6DOF& pose) {
+  // Publish map to odom tf
+  computeMapToOdomTransform();
+  geometry_msgs::TransformStamped map_to_odom_tf =
+      getTfStampedFromEigenMatrix(stamp, T_map_to_odom_.matrix().cast<float>(), map_frame_, odom_frame_);
+  tf_broadcaster_.sendTransform(map_to_odom_tf);
+
+  // Publish pose in map tf
+  Eigen::Isometry3d pose_in_map(Eigen::Isometry3d::Identity());
+  if (keyframes_.size() > 0) {
+    const auto& latest_keyframe = keyframes_.back();
+    pose_in_map = latest_keyframe->graph_node_->estimate();
+  }
+  geometry_msgs::TransformStamped pose_in_map_tf =
+      getTfStampedFromEigenMatrix(stamp, pose_in_map.matrix().cast<float>(), map_frame_, robot_frame_);
+  tf_broadcaster_.sendTransform(pose_in_map_tf);
 }
 
 void IcpSlam::mainLoop() {
   ROS_INFO("IcpSlam: Main loop started");
-
-  int keyframes_window;
-  nh_.param("keyframes_window", keyframes_window, 1);
 
   unsigned long curr_vertex_key = 0;
   bool run_pose_optimization = false, new_transform_icp = false, new_transform_rodom = false, is_keyframe = false;
@@ -35,7 +82,7 @@ void IcpSlam::mainLoop() {
       if (new_transform_icp) {
         if (num_keyframes > 0) {
           Pose6DOF refined_transform;
-          std::cout << "Original transform:\n" << icp_transform;
+          // std::cout << "Original transform:\n" << icp_transform;
           bool icp_refined = octree_mapper_.refineTransformICP(cloud, prev_icp_odom_pose, &refined_transform);
           if (icp_refined) {
             // icp_transform = refined_transform;
@@ -50,7 +97,7 @@ void IcpSlam::mainLoop() {
           is_keyframe = true;
           num_keyframes++;
           prev_keyframe_pose = icp_odom_pose;
-          if (num_keyframes % keyframes_window == 0)
+          if (num_keyframes % keyframes_window_ == 0)
             run_pose_optimization = true;
         } else {
           // ROS_INFO("IcpSlam:  ICP vertex inserted! ID %lu", curr_vertex_key+1);
@@ -75,6 +122,7 @@ void IcpSlam::mainLoop() {
       if (run_pose_optimization) {
         // octree_mapper_.resetMap();
         // pose_optimizer->publishRefinedMap();
+        pose_graph_->optimize();
         run_pose_optimization = false;
       }
 
@@ -82,9 +130,6 @@ void IcpSlam::mainLoop() {
 
       prev_icp_odom_pose = icp_odom_pose;
       iter++;
-    } else {
-      Pose6DOF identity = Pose6DOF::getIdentity();
-      // pose_optimizer->publishDebugTransform(identity, "debug", "odom");
     }
     ros::spinOnce();
   }

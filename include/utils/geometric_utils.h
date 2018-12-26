@@ -45,3 +45,6 @@ double lengthOfRosPose(tf::Pose vector);
 Eigen::Isometry3d getEigenIsometry3FromRosOdometry(const nav_msgs::Odometry odom_msg);
 
 nav_msgs::Odometry getRosOdometryFromEigenIsometry3(const std::string frame_id, const Eigen::Isometry3d& odom, const ros::Time stamp);
+
+geometry_msgs::TransformStamped getTfStampedFromEigenMatrix(
+    const ros::Time& stamp, const Eigen::Matrix4f& pose, const std::string& frame_id, const std::string& child_frame_id);

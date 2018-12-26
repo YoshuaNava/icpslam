@@ -68,15 +68,11 @@ void RobotOdometer::getEstimates(Pose6DOF* latest_odom_transform, Pose6DOF* odom
 void RobotOdometer::robotOdometryCallback(const nav_msgs::Odometry::ConstPtr& robot_odom_msg) {
   ROS_DEBUG("IcpSlam: Robot odometry callback!");
 
-  // Re-publish for visualization
-  if (robot_odom_pub_.getNumSubscribers() > 0) {
-    robot_odom_pub_.publish(robot_odom_msg);
-  }
-
   ros::Time stamp = robot_odom_msg->header.stamp;
   geometry_msgs::PoseWithCovariance pose_cov_msg = robot_odom_msg->pose;
   Pose6DOF pose_in_odom(pose_cov_msg, stamp), pose_in_map;
 
+  // Remove initial pose offset and save poses
   Pose6DOF pose_without_offset = pose_in_odom - rodom_first_pose_;
   int num_poses = robot_odom_poses_.size();
   if (num_poses == 0) {
@@ -99,13 +95,16 @@ void RobotOdometer::robotOdometryCallback(const nav_msgs::Odometry::ConstPtr& ro
     }
   }
 
+  // Publish odometry, pose and path for visualization
+  if (robot_odom_pub_.getNumSubscribers() > 0) {
+    robot_odom_pub_.publish(robot_odom_msg);
+  }
   if (robot_pose_pub_.getNumSubscribers() > 0) {
     geometry_msgs::PoseStamped pose_stamped_msg;
     pose_stamped_msg.header.stamp = stamp;
     pose_stamped_msg.pose = robot_odom_msg->pose.pose;
     robot_pose_pub_.publish(pose_stamped_msg);
   }
-
   if (robot_odom_path_pub_.getNumSubscribers() > 0) {
     robot_odom_path_.header.stamp = stamp;
     robot_odom_path_.header.frame_id = odom_frame_;

@@ -7,14 +7,14 @@ robot_frame: base_link
 laser_frame: laser
 
 keyframes_window: 1
-aggregate_clouds: false
 
-num_clouds_skip: 20   # 0 for spinning lidar assembled cloud, 5 for 2D laser, 20 for velodyne
+num_clouds_skip: 0   # 0 for spinning lidar assembled cloud, 5 for 2D laser, 20 for velodyne
 voxel_leaf_size: 0.2
 
 publish_map_transform: false
 
 
+# aggregate_clouds: false
 # <param name="robot_odom_topic" type="string" value="/odometry/filtered" />
 # <param name="icp_odom_topic" type="string" value="/icpslam/odom" />
 # <param name="robot_odom_path_topic" type="string" value="/icpslam/robot_odom_path" />

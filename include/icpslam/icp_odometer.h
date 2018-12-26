@@ -41,7 +41,7 @@ class ICPOdometer {
 
   void publishPath();
 
-  bool updateICPOdometry(Eigen::Matrix4d T);
+  bool updateICPOdometry(const ros::Time& stamp, const Eigen::Matrix4d& T);
 
   void laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg);
 
