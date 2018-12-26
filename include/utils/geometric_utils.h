@@ -40,4 +40,8 @@ std::string getStringFromQuaternion(Eigen::Quaterniond q);
 
 tf::Pose differenceBetweenPoses(geometry_msgs::Pose p1, geometry_msgs::Pose p2);
 
-double lengthOfVector(tf::Pose vector);
+double lengthOfRosPose(tf::Pose vector);
+
+Eigen::Isometry3d getEigenIsometry3FromRosOdometry(const nav_msgs::Odometry odom_msg);
+
+nav_msgs::Odometry getRosOdometryFromEigenIsometry3(const std::string frame_id, const Eigen::Isometry3d& odom, const ros::Time stamp);

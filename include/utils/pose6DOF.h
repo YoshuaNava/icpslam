@@ -9,7 +9,6 @@
 #include <geometry_msgs/PoseWithCovariance.h>
 #include <geometry_msgs/Transform.h>
 #include <nav_msgs/Odometry.h>
-#include <std_msgs/Float64.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 
@@ -25,11 +24,17 @@ class Pose6DOF {
   Eigen::Matrix<double, 6, 6> cov;
 
   Pose6DOF();
-
-  Pose6DOF(Eigen::Matrix4d& T, ros::Time stamp = ros::Time(0));
-
+  Pose6DOF(const Eigen::Matrix4d& T, ros::Time stamp = ros::Time(0));
   Pose6DOF(
-      Eigen::Matrix4d& T, std::string tgt_frame, std::string src_frame, tf::TransformListener* tf_listener, ros::Time stamp = ros::Time(0));
+      const Eigen::Matrix4d& T, const std::string& tgt_frame, const std::string& src_frame, tf::TransformListener* tf_listener,
+      ros::Time stamp = ros::Time(0));
+  Pose6DOF(const geometry_msgs::Pose& pose_msg, ros::Time stamp = ros::Time(0));
+  Pose6DOF(
+      const geometry_msgs::Pose& pose_msg, const std::string& tgt_frame, const std::string& src_frame, tf::TransformListener* tf_listener,
+      ros::Time stamp = ros::Time(0));
+  Pose6DOF(const geometry_msgs::PoseWithCovariance& pose_msg, ros::Time stamp = ros::Time(0));
+  Pose6DOF(const tf::Transform& transform, ros::Time stamp = ros::Time(0));
+  Pose6DOF(const geometry_msgs::Transform& transform, ros::Time stamp = ros::Time(0));
 
   Pose6DOF operator+=(const Pose6DOF& p2) {
     Pose6DOF p3 = compose(*this, p2);
@@ -95,29 +100,24 @@ class Pose6DOF {
   std::string toStringQuat(const std::string& indent = "") const;
   std::string toStringRPY(const std::string& indent = "") const;
 
-  void transformToFixedFrame(std::string tgt_frame, std::string src_frame, tf::TransformListener* tf_listener);
+  void transformToFixedFrame(const std::string& tgt_frame, const std::string& src_frame, tf::TransformListener* tf_listener);
   static Pose6DOF transformToFixedFrame(
-      Pose6DOF pose_in_src, std::string tgt_frame, std::string src_frame, tf::TransformListener* tf_listener);
+      const Pose6DOF& pose_in_src, const std::string& tgt_frame, const std::string& src_frame, tf::TransformListener* tf_listener);
 
-  Pose6DOF(geometry_msgs::Pose& pose_msg, ros::Time stamp = ros::Time(0));
-  Pose6DOF(
-      geometry_msgs::Pose& pose_msg, std::string tgt_frame, std::string src_frame, tf::TransformListener* tf_listener,
-      ros::Time stamp = ros::Time(0));
-  Pose6DOF(geometry_msgs::PoseWithCovariance& pose_msg, ros::Time stamp = ros::Time(0));
-  Pose6DOF(tf::Transform& transform, ros::Time stamp = ros::Time(0));
-  Pose6DOF(geometry_msgs::Transform& transform, ros::Time stamp = ros::Time(0));
-
-  void fromEigenMatrix(Eigen::Matrix4d& T);
-  void fromEigenMatrixInFixedFrame(Eigen::Matrix4d& T, std::string tgt_frame, std::string src_frame, tf::TransformListener* tf_listener);
+  void fromEigenIsometry3(const Eigen::Isometry3d& T);
+  void fromEigenMatrix(const Eigen::Matrix4d& T);
+  void fromEigenMatrixInFixedFrame(
+      const Eigen::Matrix4d& T, const std::string& tgt_frame, const std::string& src_frame, tf::TransformListener* tf_listener);
   void fromROSPoseInFixedFrame(
-      geometry_msgs::Pose pose_msg, std::string tgt_frame, std::string src_frame, tf::TransformListener* tf_listener);
-  void fromROSPose(geometry_msgs::Pose& pose);
-  void fromROSPoseWithCovariance(geometry_msgs::PoseWithCovariance& pose_cov);
-  void fromROSTransform(geometry_msgs::Transform& transform);
-  void fromTFPose(tf::Pose& pose);
-  void fromTFTransform(tf::Transform& transform);
+      const geometry_msgs::Pose& pose_msg, const std::string& tgt_frame, const std::string& src_frame, tf::TransformListener* tf_listener);
+  void fromROSPose(const geometry_msgs::Pose& pose);
+  void fromROSPoseWithCovariance(const geometry_msgs::PoseWithCovariance& pose_cov);
+  void fromROSTransform(const geometry_msgs::Transform& transform);
+  void fromTFPose(const tf::Pose& pose);
+  void fromTFTransform(const tf::Transform& transform);
 
-  Eigen::Matrix4d toTMatrix() const;
+  Eigen::Matrix4d toEigenMatrix() const;
+  Eigen::Isometry3d toEigenIsometry3() const;
   tf::Transform toTFTransform() const;
   tf::Pose toTFPose() const;
   geometry_msgs::Point toROSPoint() const;

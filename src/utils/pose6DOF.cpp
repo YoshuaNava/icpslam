@@ -5,17 +5,55 @@ Pose6DOF::Pose6DOF() {
   setIdentity();
 }
 
-Pose6DOF::Pose6DOF(Eigen::Matrix4d& T, ros::Time stamp) {
+Pose6DOF::Pose6DOF(const Eigen::Matrix4d& T, ros::Time stamp) {
   setIdentity();
   time_stamp = stamp;
   this->fromEigenMatrix(T);
   cov = Eigen::MatrixXd::Identity(6, 6);
 }
 
-Pose6DOF::Pose6DOF(Eigen::Matrix4d& T, std::string tgt_frame, std::string src_frame, tf::TransformListener* tf_listener, ros::Time stamp) {
+Pose6DOF::Pose6DOF(
+    const Eigen::Matrix4d& T, const std::string& tgt_frame, const std::string& src_frame, tf::TransformListener* tf_listener,
+    ros::Time stamp) {
   setIdentity();
   time_stamp = stamp;
   this->fromEigenMatrixInFixedFrame(T, tgt_frame, src_frame, tf_listener);
+  cov = Eigen::MatrixXd::Identity(6, 6);
+}
+
+Pose6DOF::Pose6DOF(const geometry_msgs::Pose& pose_msg, ros::Time stamp) {
+  setIdentity();
+  time_stamp = stamp;
+  this->fromROSPose(pose_msg);
+  cov = Eigen::MatrixXd::Identity(6, 6);
+}
+
+Pose6DOF::Pose6DOF(
+    const geometry_msgs::Pose& pose_msg, const std::string& tgt_frame, const std::string& src_frame, tf::TransformListener* tf_listener,
+    ros::Time stamp) {
+  setIdentity();
+  time_stamp = stamp;
+  this->fromROSPoseInFixedFrame(pose_msg, tgt_frame, src_frame, tf_listener);
+  cov = Eigen::MatrixXd::Identity(6, 6);
+}
+
+Pose6DOF::Pose6DOF(const geometry_msgs::PoseWithCovariance& pose_msg, ros::Time stamp) {
+  setIdentity();
+  time_stamp = stamp;
+  this->fromROSPoseWithCovariance(pose_msg);
+}
+
+Pose6DOF::Pose6DOF(const tf::Transform& transform, ros::Time stamp) {
+  setIdentity();
+  time_stamp = stamp;
+  this->fromTFTransform(transform);
+  cov = Eigen::MatrixXd::Identity(6, 6);
+}
+
+Pose6DOF::Pose6DOF(const geometry_msgs::Transform& transform, ros::Time stamp) {
+  setIdentity();
+  time_stamp = stamp;
+  this->fromROSTransform(transform);
   cov = Eigen::MatrixXd::Identity(6, 6);
 }
 
@@ -115,14 +153,14 @@ std::string Pose6DOF::toStringRPY(const std::string& indent) const {
   return output;
 }
 
-void Pose6DOF::transformToFixedFrame(std::string tgt_frame, std::string src_frame, tf::TransformListener* tf_listener) {
+void Pose6DOF::transformToFixedFrame(const std::string& tgt_frame, const std::string& src_frame, tf::TransformListener* tf_listener) {
   Pose6DOF pose_in_tgt = transformToFixedFrame(*this, tgt_frame, src_frame, tf_listener);
   pos = pose_in_tgt.pos;
   rot = pose_in_tgt.rot;
 }
 
 Pose6DOF Pose6DOF::transformToFixedFrame(
-    Pose6DOF pose_in_src, std::string tgt_frame, std::string src_frame, tf::TransformListener* tf_listener) {
+    const Pose6DOF& pose_in_src, const std::string& tgt_frame, const std::string& src_frame, tf::TransformListener* tf_listener) {
   tf::Pose tf_in_src(
       tf::Quaternion(pose_in_src.rot.x(), pose_in_src.rot.y(), pose_in_src.rot.z(), pose_in_src.rot.w()),
       tf::Vector3(pose_in_src.pos(0), pose_in_src.pos(1), pose_in_src.pos(2)));
@@ -138,42 +176,13 @@ Pose6DOF Pose6DOF::transformToFixedFrame(
   return pose_in_tgt;
 }
 
-Pose6DOF::Pose6DOF(geometry_msgs::Pose& pose_msg, ros::Time stamp) {
-  setIdentity();
-  time_stamp = stamp;
-  this->fromROSPose(pose_msg);
-  cov = Eigen::MatrixXd::Identity(6, 6);
+void Pose6DOF::fromEigenIsometry3(const Eigen::Isometry3d& T) {
+  pos = Eigen::Vector3d(T.translation().x(), T.translation().y(), T.translation().z());
+  rot = Eigen::Quaterniond(T.linear());
+  rot.normalize();
 }
 
-Pose6DOF::Pose6DOF(
-    geometry_msgs::Pose& pose_msg, std::string tgt_frame, std::string src_frame, tf::TransformListener* tf_listener, ros::Time stamp) {
-  setIdentity();
-  time_stamp = stamp;
-  this->fromROSPoseInFixedFrame(pose_msg, tgt_frame, src_frame, tf_listener);
-  cov = Eigen::MatrixXd::Identity(6, 6);
-}
-
-Pose6DOF::Pose6DOF(geometry_msgs::PoseWithCovariance& pose_msg, ros::Time stamp) {
-  setIdentity();
-  time_stamp = stamp;
-  this->fromROSPoseWithCovariance(pose_msg);
-}
-
-Pose6DOF::Pose6DOF(tf::Transform& transform, ros::Time stamp) {
-  setIdentity();
-  time_stamp = stamp;
-  this->fromTFTransform(transform);
-  cov = Eigen::MatrixXd::Identity(6, 6);
-}
-
-Pose6DOF::Pose6DOF(geometry_msgs::Transform& transform, ros::Time stamp) {
-  setIdentity();
-  time_stamp = stamp;
-  this->fromROSTransform(transform);
-  cov = Eigen::MatrixXd::Identity(6, 6);
-}
-
-void Pose6DOF::fromEigenMatrix(Eigen::Matrix4d& T) {
+void Pose6DOF::fromEigenMatrix(const Eigen::Matrix4d& T) {
   pos = Eigen::Vector3d(T(0, 3), T(1, 3), T(2, 3));
   Eigen::Matrix3d R = T.block(0, 0, 3, 3);  //.transpose();
   rot = Eigen::Quaterniond(R);
@@ -181,56 +190,64 @@ void Pose6DOF::fromEigenMatrix(Eigen::Matrix4d& T) {
 }
 
 void Pose6DOF::fromEigenMatrixInFixedFrame(
-    Eigen::Matrix4d& T, std::string tgt_frame, std::string src_frame, tf::TransformListener* tf_listener) {
+    const Eigen::Matrix4d& T, const std::string& tgt_frame, const std::string& src_frame, tf::TransformListener* tf_listener) {
   Pose6DOF pose_T_in_src(T);
   transformToFixedFrame(tgt_frame, src_frame, tf_listener);
 }
 
 void Pose6DOF::fromROSPoseInFixedFrame(
-    geometry_msgs::Pose pose_msg, std::string tgt_frame, std::string src_frame, tf::TransformListener* tf_listener) {
+    const geometry_msgs::Pose& pose_msg, const std::string& tgt_frame, const std::string& src_frame, tf::TransformListener* tf_listener) {
   Pose6DOF pose_in_src(pose_msg);
   transformToFixedFrame(tgt_frame, src_frame, tf_listener);
 }
 
-void Pose6DOF::fromROSPose(geometry_msgs::Pose& pose) {
+void Pose6DOF::fromROSPose(const geometry_msgs::Pose& pose) {
   pos = Eigen::Vector3d(pose.position.x, pose.position.y, pose.position.z);
   rot = Eigen::Quaterniond(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
   rot.normalize();
 }
 
-void Pose6DOF::fromROSPoseWithCovariance(geometry_msgs::PoseWithCovariance& pose_cov) {
+void Pose6DOF::fromROSPoseWithCovariance(const geometry_msgs::PoseWithCovariance& pose_cov) {
   pos = Eigen::Vector3d(pose_cov.pose.position.x, pose_cov.pose.position.y, pose_cov.pose.position.z);
   rot = Eigen::Quaterniond(
       pose_cov.pose.orientation.w, pose_cov.pose.orientation.x, pose_cov.pose.orientation.y, pose_cov.pose.orientation.z);
   rot.normalize();
-  double* cov_arr = pose_cov.covariance.data();
+  const double* cov_arr = pose_cov.covariance.data();
   cov = Eigen::Matrix<double, 6, 6>(cov_arr);
 }
 
-void Pose6DOF::fromROSTransform(geometry_msgs::Transform& transform) {
+void Pose6DOF::fromROSTransform(const geometry_msgs::Transform& transform) {
   pos = Eigen::Vector3d(transform.translation.x, transform.translation.y, transform.translation.z);
   rot = Eigen::Quaterniond(transform.rotation.w, transform.rotation.x, transform.rotation.y, transform.rotation.z);
   rot.normalize();
 }
 
-void Pose6DOF::fromTFPose(tf::Pose& pose) {
+void Pose6DOF::fromTFPose(const tf::Pose& pose) {
   pos = Eigen::Vector3d(pose.getOrigin().getX(), pose.getOrigin().getY(), pose.getOrigin().getZ());
   rot = Eigen::Quaterniond(pose.getRotation().w(), pose.getRotation().x(), pose.getRotation().y(), pose.getRotation().z());
   rot.normalize();
 }
 
-void Pose6DOF::fromTFTransform(tf::Transform& transform) {
+void Pose6DOF::fromTFTransform(const tf::Transform& transform) {
   pos = Eigen::Vector3d(transform.getOrigin().getX(), transform.getOrigin().getY(), transform.getOrigin().getZ());
   rot = Eigen::Quaterniond(
       transform.getRotation().w(), transform.getRotation().x(), transform.getRotation().y(), transform.getRotation().z());
   rot.normalize();
 }
 
-Eigen::Matrix4d Pose6DOF::toTMatrix() const {
+Eigen::Matrix4d Pose6DOF::toEigenMatrix() const {
   Eigen::Matrix4d T;
   T.setIdentity();
   T.block<3, 3>(0, 0) = rot.toRotationMatrix();
   T.block<3, 1>(0, 2) = pos;
+  return T;
+}
+
+Eigen::Isometry3d Pose6DOF::toEigenIsometry3() const {
+  Eigen::Isometry3d T;
+  T.setIdentity();
+  T.linear() = rot.toRotationMatrix();
+  T.translation() = pos;
   return T;
 }
 
