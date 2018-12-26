@@ -33,15 +33,12 @@ void RobotOdometer::loadParameters() {
 
   // Input robot odometry topic
   pnh_.param("robot_odom_topic", robot_odom_topic_, std::string("/odometry/filtered"));
-
-  // Robot odometry debug topics
-  if (verbosity_level_ >= 1) {
-    pnh_.param("robot_odom_path_topic", robot_odom_path_topic_, std::string("robot_odometer/path"));
-  }
 }
 
 void RobotOdometer::advertisePublishers() {
-  robot_odom_path_pub_ = pnh_.advertise<nav_msgs::Path>(robot_odom_path_topic_, 1);
+  robot_odom_pub_ = pnh_.advertise<nav_msgs::Odometry>("robot_odometer/odometry", 1);
+  robot_pose_pub_ = pnh_.advertise<geometry_msgs::PoseStamped>("robot_odometer/pose", 1);
+  robot_odom_path_pub_ = pnh_.advertise<nav_msgs::Path>("robot_odometer/path", 1);
 }
 
 void RobotOdometer::registerSubscribers() {
@@ -69,34 +66,49 @@ void RobotOdometer::getEstimates(Pose6DOF* latest_odom_transform, Pose6DOF* odom
 }
 
 void RobotOdometer::robotOdometryCallback(const nav_msgs::Odometry::ConstPtr& robot_odom_msg) {
-  // ROS_INFO("IcpSlam: Robot odometry callback!");
-  geometry_msgs::PoseWithCovariance pose_cov_msg = robot_odom_msg->pose;
-  Pose6DOF pose_in_odom(pose_cov_msg, robot_odom_msg->header.stamp), pose_in_map;
+  ROS_DEBUG("IcpSlam: Robot odometry callback!");
 
-  Pose6DOF pose_debug = pose_in_odom - rodom_first_pose_;
+  // Re-publish for visualization
+  if (robot_odom_pub_.getNumSubscribers() > 0) {
+    robot_odom_pub_.publish(robot_odom_msg);
+  }
+
+  ros::Time stamp = robot_odom_msg->header.stamp;
+  geometry_msgs::PoseWithCovariance pose_cov_msg = robot_odom_msg->pose;
+  Pose6DOF pose_in_odom(pose_cov_msg, stamp), pose_in_map;
+
+  Pose6DOF pose_without_offset = pose_in_odom - rodom_first_pose_;
   int num_poses = robot_odom_poses_.size();
   if (num_poses == 0) {
+    ROS_DEBUG("IcpSlam: Robot odometry first pose.");
     rodom_first_pose_ = pose_in_odom;
-    robot_odom_poses_.push_back(Pose6DOF::getIdentity());
-    insertPoseInPath(Pose6DOF::getIdentity().toROSPose(), map_frame_, robot_odom_msg->header.stamp, robot_odom_path_);
+    robot_odom_poses_.push_back(pose_in_odom);
+    insertPoseInPath(pose_in_odom.toROSPose(), odom_frame_, stamp, robot_odom_path_);
     odom_inited_ = true;
   } else {
-    Pose6DOF prev_pose = getLatestPose();
-    odom_latest_transform_ = pose_debug - prev_pose;
-    robot_odom_poses_.push_back(pose_debug);
     if (verbosity_level_ >= 2) {
-      std::cout << "Robot odometry pose:\n" << pose_debug.toStringQuat("   ");
+      std::cout << "Robot odometry pose:\n" << pose_without_offset.toStringQuat("   ");
       std::cout << "Robot odometry transform:\n" << odom_latest_transform_.toStringQuat("   ");
       std::cout << std::endl;
     }
 
     Pose6DOF prev_pose_path(robot_odom_path_.poses[num_poses - 1].pose);
-    if (Pose6DOF::distanceEuclidean(pose_debug, prev_pose_path) < POSE_DIST_THRESH) {
-      return;
+    if (Pose6DOF::distanceEuclidean(pose_without_offset, prev_pose_path) >= POSE_DIST_THRESH) {
+      robot_odom_poses_.push_back(pose_in_odom);
+      insertPoseInPath(pose_without_offset.toROSPose(), odom_frame_, stamp, robot_odom_path_);
     }
-    insertPoseInPath(pose_debug.toROSPose(), map_frame_, robot_odom_msg->header.stamp, robot_odom_path_);
-    robot_odom_path_.header.stamp = ros::Time().now();
-    robot_odom_path_.header.frame_id = map_frame_;
+  }
+
+  if (robot_pose_pub_.getNumSubscribers() > 0) {
+    geometry_msgs::PoseStamped pose_stamped_msg;
+    pose_stamped_msg.header.stamp = stamp;
+    pose_stamped_msg.pose = robot_odom_msg->pose.pose;
+    robot_pose_pub_.publish(pose_stamped_msg);
+  }
+
+  if (robot_odom_path_pub_.getNumSubscribers() > 0) {
+    robot_odom_path_.header.stamp = stamp;
+    robot_odom_path_.header.frame_id = odom_frame_;
     robot_odom_path_pub_.publish(robot_odom_path_);
   }
 

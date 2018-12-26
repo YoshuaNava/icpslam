@@ -39,31 +39,19 @@ void ICPOdometer::loadParameters() {
   pnh_.param("robot_frame", robot_frame_, std::string("base_link"));
   pnh_.param("laser_frame", laser_frame_, std::string("laser"));
 
-  // Input robot odometry and point cloud topics
-  pnh_.param("laser_cloud_topic", laser_cloud_topic_, std::string("input_cloud"));
-
   pnh_.param("voxel_leaf_size", voxel_leaf_size_, 0.05);
   pnh_.param("aggregate_clouds", aggregate_clouds_, false);
   pnh_.param("num_clouds_skip", num_clouds_skip_, 0);
-
-  // ICP odometry debug topics
-  if (verbosity_level_ >= 1) {
-    pnh_.param("prev_cloud_topic", prev_cloud_topic_, std::string("icp_odometer/prev_cloud"));
-    pnh_.param("aligned_cloud_topic", aligned_cloud_topic_, std::string("icp_odometer/aligned_cloud"));
-
-    pnh_.param("icp_odom_topic", icp_odom_topic_, std::string("icp_odometer/odom"));
-    pnh_.param("icp_odom_path_topic", icp_odom_path_topic_, std::string("icp_odometer/icp_odom_path"));
-  }
 }
 
 void ICPOdometer::advertisePublishers() {
-  icp_odom_pub_ = pnh_.advertise<nav_msgs::Odometry>(icp_odom_topic_, 1);
-  icp_odom_path_pub_ = pnh_.advertise<nav_msgs::Path>(icp_odom_path_topic_, 1);
+  icp_odom_pub_ = pnh_.advertise<nav_msgs::Odometry>("icp_odometer/odom", 1);
+  icp_odom_path_pub_ = pnh_.advertise<nav_msgs::Path>("icp_odometer/path", 1);
 
   // ICP odometry debug topics
   if (verbosity_level_ >= 1) {
-    prev_cloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>(prev_cloud_topic_, 1);
-    aligned_cloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>(aligned_cloud_topic_, 1);
+    prev_cloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>("icp_odometer/prev_cloud", 1);
+    aligned_cloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>("icp_odometer/aligned_cloud", 1);
   }
 }
 

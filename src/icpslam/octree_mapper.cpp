@@ -37,23 +37,16 @@ void OctreeMapper::loadParameters() {
   pnh_.param("odom_frame", odom_frame_, std::string("odom"));
   pnh_.param("robot_frame", robot_frame_, std::string("base_link"));
   pnh_.param("laser_frame", laser_frame_, std::string("laser"));
-
-  // Input robot odometry and point cloud topics
-
-  pnh_.param("increment_cloud_topic", increment_cloud_topic_, std::string("octree_mapper/increment_cloud"));
-  pnh_.param("nn_cloud_topic", nn_cloud_topic_, std::string("octree_mapper/nn_cloud"));
-  pnh_.param("map_cloud_topic", map_cloud_topic_, std::string("octree_mapper/map_cloud"));
-  pnh_.param("refined_path_topic", refined_path_topic_, std::string("octree_mapper/refined_path"));
 }
 
 void OctreeMapper::advertisePublishers() {
-  map_cloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>(map_cloud_topic_, 1);
-  nn_cloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>(nn_cloud_topic_, 1);
-  refined_path_pub_ = pnh_.advertise<nav_msgs::Path>(refined_path_topic_, 1);
+  map_cloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>("octree_mapper/map_cloud", 1);
+  nn_cloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>("octree_mapper/nn_cloud", 1);
+  refined_path_pub_ = pnh_.advertise<nav_msgs::Path>("octree_mapper/refined_path", 1);
 }
 
 void OctreeMapper::registerSubscribers() {
-  increment_cloud_sub_ = nh_.subscribe(increment_cloud_topic_, 10, &OctreeMapper::incrementCloudCallback, this);
+  increment_cloud_sub_ = nh_.subscribe("octree_mapper/increment_cloud", 10, &OctreeMapper::incrementCloudCallback, this);
 }
 
 void OctreeMapper::resetMap() {
@@ -156,12 +149,14 @@ bool OctreeMapper::refineTransformICP(const pcl::PointCloud<pcl::PointXYZ>::Ptr&
   approxNearestNeighbors(*cloud_in_map, &*nn_cloud_in_map);
   transformCloudToPoseFrame(*nn_cloud_in_map, prev_pose.inverse(), &*nn_cloud);
 
-  if (verbosity_level_ >= 1) {
+  if (nn_cloud_pub_.getNumSubscribers() > 0) {
     publishPointCloud(nn_cloud, robot_frame_, ros::Time().now(), &nn_cloud_pub_);
   }
 
   if (estimateTransformICP(cloud, nn_cloud, transform)) {
-    publishPath(prev_pose + (*transform));
+    if (nn_cloud_pub_.getNumSubscribers() > 0) {
+      publishPath(prev_pose + (*transform));
+    }
     return true;
   }
 

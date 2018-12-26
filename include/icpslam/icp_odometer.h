@@ -63,16 +63,9 @@ class ICPOdometer {
   std::string robot_frame_;
   std::string odom_frame_;
   std::string map_frame_;
-  std::string laser_cloud_topic_;
-  
+
   ros::Subscriber laser_cloud_sub_;
 
-  // Debug topics and publishers
-  std::string prev_cloud_topic_;
-  std::string aligned_cloud_topic_;
-  std::string icp_odom_topic_;
-  std::string icp_odom_path_topic_;
-  
   ros::Publisher prev_cloud_pub_;
   ros::Publisher aligned_cloud_pub_;
   ros::Publisher icp_odom_pub_;
@@ -89,12 +82,12 @@ class ICPOdometer {
   // Translations and rotations estimated by ICP
   bool new_transform_;
   double voxel_leaf_size_;
-  
+
   int clouds_skipped_;
   int num_clouds_skip_;
 
   bool aggregate_clouds_;
-  
+
   Pose6DOF icp_latest_transform_;
   std::vector<Pose6DOF> icp_odom_poses_;
   tf::TransformListener tf_listener_;

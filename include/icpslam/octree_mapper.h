@@ -66,16 +66,11 @@ class OctreeMapper {
   std::string odom_frame_;
   std::string map_frame_;
 
-  std::string map_cloud_topic_;
-  std::string increment_cloud_topic_;
-  std::string nn_cloud_topic_;
-  std::string refined_path_topic_;
+  ros::Subscriber increment_cloud_sub_;
 
   ros::Publisher map_cloud_pub_;
   ros::Publisher nn_cloud_pub_;
   ros::Publisher refined_path_pub_;
-  
-  ros::Subscriber increment_cloud_sub_;
 
   // tf
   tf::TransformListener tf_listener_;
