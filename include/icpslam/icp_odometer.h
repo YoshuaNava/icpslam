@@ -10,16 +10,24 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
+#include <pcl/filters/voxel_grid.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/registration/gicp.h>
 
 #include "utils/pose6DOF.h"
 
-class ICPOdometer {
+class IcpOdometer {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  using Ptr = std::shared_ptr<IcpOdometer>;
+  // Future idea - Templated class
+  // typedef pcl::PointCloud<PointType> PclPointCloud;
+  // typedef typename pcl::PointCloud<PointType>::Ptr PclPointCloudPtr;
+  // typedef pcl::VoxelGrid<PointType> PclVoxelGrid;
+  // typedef pcl::GeneralizedIterativeClosestPoint<PointType, PointType> GeneralizedIterativeClosestPoint;
 
-  ICPOdometer(const ros::NodeHandle& nh, const ros::NodeHandle& pnh);
+  IcpOdometer(const ros::NodeHandle& nh, const ros::NodeHandle& pnh);
 
   void init();
 
@@ -39,7 +47,7 @@ class ICPOdometer {
 
   void voxelFilterCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr* input, pcl::PointCloud<pcl::PointXYZ>::Ptr* output);
 
-  void publishPath();
+  void publishPath(const ros::Time& stamp);
 
   bool updateICPOdometry(const ros::Time& stamp, const Eigen::Matrix4d& T);
 
@@ -52,10 +60,6 @@ class ICPOdometer {
   const double ICP_EPSILON = 1e-06;
   const double ICP_MAX_ITERS = 10;
 
-  int verbosity_level_;
-
-  bool odom_inited_;
-
   // ROS node handle, URDF frames, topics and publishers
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
@@ -65,30 +69,33 @@ class ICPOdometer {
   std::string map_frame_;
 
   ros::Subscriber laser_cloud_sub_;
+  tf::TransformListener tf_listener_;
 
   ros::Publisher prev_cloud_pub_;
   ros::Publisher aligned_cloud_pub_;
   ros::Publisher icp_odom_pub_;
   ros::Publisher icp_odom_path_pub_;
 
-  // PCL clouds
-  pcl::PointCloud<pcl::PointXYZ>::Ptr prev_cloud_;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr curr_cloud_;
-
   // Odometry path containers
   nav_msgs::Odometry icp_odom_;
   nav_msgs::Path icp_odom_path_;
 
+  int verbosity_level_;
+  bool odom_inited_;
+
   // Translations and rotations estimated by ICP
   bool new_transform_;
-  double voxel_leaf_size_;
 
+  // Cloud skipping and filtering
   int clouds_skipped_;
   int num_clouds_skip_;
+  double voxel_leaf_size_;
 
-  bool aggregate_clouds_;
-
+  // Transforms and intermediate poses
   Pose6DOF icp_latest_transform_;
   std::vector<Pose6DOF> icp_odom_poses_;
-  tf::TransformListener tf_listener_;
+
+  // PCL clouds
+  pcl::PointCloud<pcl::PointXYZ>::Ptr prev_cloud_;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr curr_cloud_;
 };

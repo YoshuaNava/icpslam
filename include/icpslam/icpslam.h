@@ -44,7 +44,7 @@ class IcpSlam {
   std::string map_frame_;
 
   RobotOdometer robot_odometer_;
-  ICPOdometer icp_odometer_;
+  IcpOdometer icp_odometer_;
   OctreeMapper octree_mapper_;
   pose_graph_utils::PoseGraphG2O::Ptr pose_graph_;
 

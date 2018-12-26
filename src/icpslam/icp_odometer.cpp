@@ -3,26 +3,28 @@
 
 #include <tf/transform_datatypes.h>
 
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/registration/gicp.h>
-#include <pcl/registration/icp.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/impl/transforms.hpp>
 
 #include "utils/geometric_utils.h"
 #include "utils/messaging_utils.h"
 
-ICPOdometer::ICPOdometer(const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
-    : nh_(nh), pnh_(pnh), prev_cloud_(new pcl::PointCloud<pcl::PointXYZ>()), curr_cloud_(new pcl::PointCloud<pcl::PointXYZ>()) {
-  odom_inited_ = false;
-  new_transform_ = false;
-  clouds_skipped_ = 0;
-  icp_latest_transform_.setIdentity();
+IcpOdometer::IcpOdometer(const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
+    : nh_(nh),
+      pnh_(pnh),
+      odom_inited_(false),
+      new_transform_(false),
+      clouds_skipped_(0),
+      num_clouds_skip_(0),
+      voxel_leaf_size_(0.1),
+      icp_latest_transform_(Pose6DOF::getIdentity()),
+      prev_cloud_(new pcl::PointCloud<pcl::PointXYZ>()),
+      curr_cloud_(new pcl::PointCloud<pcl::PointXYZ>()) {
   icp_odom_poses_.push_back(Pose6DOF::getIdentity());
   init();
 }
 
-void ICPOdometer::init() {
+void IcpOdometer::init() {
   loadParameters();
   advertisePublishers();
   registerSubscribers();
@@ -30,7 +32,7 @@ void ICPOdometer::init() {
   ROS_INFO("IcpSlam: ICP odometer initialized");
 }
 
-void ICPOdometer::loadParameters() {
+void IcpOdometer::loadParameters() {
   pnh_.param("verbosity_level_", verbosity_level_, 1);
 
   // TF frames
@@ -39,12 +41,11 @@ void ICPOdometer::loadParameters() {
   pnh_.param("robot_frame", robot_frame_, std::string("base_link"));
   pnh_.param("laser_frame", laser_frame_, std::string("laser"));
 
-  pnh_.param("voxel_leaf_size", voxel_leaf_size_, 0.05);
-  pnh_.param("aggregate_clouds", aggregate_clouds_, false);
   pnh_.param("num_clouds_skip", num_clouds_skip_, 0);
+  pnh_.param("voxel_leaf_size", voxel_leaf_size_, 0.05);
 }
 
-void ICPOdometer::advertisePublishers() {
+void IcpOdometer::advertisePublishers() {
   icp_odom_pub_ = pnh_.advertise<nav_msgs::Odometry>("icp_odometer/odom", 1);
   icp_odom_path_pub_ = pnh_.advertise<nav_msgs::Path>("icp_odometer/path", 1);
 
@@ -55,23 +56,23 @@ void ICPOdometer::advertisePublishers() {
   }
 }
 
-void ICPOdometer::registerSubscribers() {
-  laser_cloud_sub_ = nh_.subscribe("laser/point_cloud", 1, &ICPOdometer::laserCloudCallback, this);
+void IcpOdometer::registerSubscribers() {
+  laser_cloud_sub_ = nh_.subscribe("laser/point_cloud", 1, &IcpOdometer::laserCloudCallback, this);
 }
 
-bool ICPOdometer::isOdomReady() {
+bool IcpOdometer::isOdomReady() {
   return odom_inited_;
 }
 
-Pose6DOF ICPOdometer::getFirstPose() {
+Pose6DOF IcpOdometer::getFirstPose() {
   return icp_odom_poses_.front();
 }
 
-Pose6DOF ICPOdometer::getLatestPose() {
+Pose6DOF IcpOdometer::getLatestPose() {
   return icp_odom_poses_.back();
 }
 
-void ICPOdometer::getEstimates(
+void IcpOdometer::getEstimates(
     pcl::PointCloud<pcl::PointXYZ>::Ptr* cloud, Pose6DOF* latest_icp_transform, Pose6DOF* icp_pose, bool* new_transform) {
   **cloud = *prev_cloud_;
   *latest_icp_transform = icp_latest_transform_;
@@ -85,22 +86,22 @@ void ICPOdometer::getEstimates(
   this->new_transform_ = false;
 }
 
-void ICPOdometer::voxelFilterCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr* input, pcl::PointCloud<pcl::PointXYZ>::Ptr* output) {
+void IcpOdometer::voxelFilterCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr* input, pcl::PointCloud<pcl::PointXYZ>::Ptr* output) {
   pcl::VoxelGrid<pcl::PointXYZ> voxel_filter;
   voxel_filter.setInputCloud(*input);
   voxel_filter.setLeafSize(voxel_leaf_size_, voxel_leaf_size_, voxel_leaf_size_);
   voxel_filter.filter(**output);
 }
 
-void ICPOdometer::publishPath() {
-  icp_odom_path_.header.stamp = ros::Time().now();
+void IcpOdometer::publishPath(const ros::Time& stamp) {
+  icp_odom_path_.header.stamp = stamp;
   icp_odom_path_.header.frame_id = map_frame_;
   icp_odom_path_pub_.publish(icp_odom_path_);
 }
 
-bool ICPOdometer::updateICPOdometry(const ros::Time& stamp, const Eigen::Matrix4d& T) {
+bool IcpOdometer::updateICPOdometry(const ros::Time& stamp, const Eigen::Matrix4d& T) {
   // ROS_INFO("IcpSlam: ICP odometry update!");
-  Pose6DOF transform(T, ros::Time().now());
+  Pose6DOF transform(T, stamp);
   Pose6DOF prev_pose = getLatestPose();
   Pose6DOF new_pose = prev_pose + transform;
   icp_latest_transform_ += transform;
@@ -120,23 +121,21 @@ bool ICPOdometer::updateICPOdometry(const ros::Time& stamp, const Eigen::Matrix4
   {
     new_transform_ = true;
     icp_odom_poses_.push_back(new_pose);
-    insertPoseInPath(new_pose.toROSPose(), map_frame_, ros::Time().now(), icp_odom_path_);
+    insertPoseInPath(new_pose.toROSPose(), map_frame_, stamp, icp_odom_path_);
 
     if (icp_odom_pub_.getNumSubscribers() > 0) {
-      publishOdometry(new_pose.pos, new_pose.rot, map_frame_, odom_frame_, ros::Time().now(), &icp_odom_pub_);
+      publishOdometry(new_pose.pos, new_pose.rot, map_frame_, odom_frame_, stamp, &icp_odom_pub_);
     }
     if (icp_odom_path_pub_.getNumSubscribers() > 0) {
-      publishPath();
+      publishPath(stamp);
     }
 
     return true;
   }
 }
 
-void ICPOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg) {
+void IcpOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg) {
   // ROS_INFO("IcpSlam: Cloud callback!");
-  // std::clock_t start;
-  // start = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::fromROSMsg(*cloud_msg, *input_cloud);
 
@@ -182,19 +181,6 @@ void ICPOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
       odom_inited_ = true;
       *prev_cloud_ = *curr_cloud_;
     }
-    // if (aggregate_clouds_) {
-    //   // TODO: Test this. Is the transformation correct?.
-    //   // TODO: How about implementing cloud aggregation with TF, saving the joint cloud in the parent frame?
-    //   *joint_cloud = *prev_cloud_;
-    //   pcl::transformPointCloud(*joint_cloud, *joint_cloud, T_inv);
-    //   *joint_cloud += *curr_cloud_in_prev_frame;
-    //   pcl::transformPointCloud(*joint_cloud, *joint_cloud, T);
-    //   pcl::VoxelGrid<pcl::PointXYZ> voxel_filter_joint;
-    //   voxel_filter_joint.setInputCloud(joint_cloud);
-    //   voxel_filter_joint.setLeafSize(0.15, 0.15, 0.15);
-    //   voxel_filter_joint.filter(*prev_cloud_);
-    // }
-    clouds_skipped_++;
 
     if (verbosity_level_ >= 1) {
       if (prev_cloud_pub_.getNumSubscribers() > 0) {
@@ -205,6 +191,4 @@ void ICPOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
       }
     }
   }
-
-  // std::cout << "Time elapsed: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 }
