@@ -37,13 +37,17 @@ class IcpOdometer {
 
   void registerSubscribers();
 
-  bool isOdomReady();
+  bool isOdomReady() const;
 
-  Pose6DOF getFirstPose();
+  void setInitialPose(const Pose6DOF& initial_pose);
 
-  Pose6DOF getLatestPose();
+  Pose6DOF getFirstPose() const;
 
-  void getEstimates(pcl::PointCloud<pcl::PointXYZ>::Ptr* cloud, Pose6DOF* latest_icp_transform, Pose6DOF* icp_pose, bool* new_transform);
+  Pose6DOF getLatestPose() const;
+
+  void getEstimates(
+      ros::Time& stamp, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, Pose6DOF& latest_icp_transform, Pose6DOF& icp_pose,
+      bool& new_transform);
 
   void voxelFilterCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr* input, pcl::PointCloud<pcl::PointXYZ>::Ptr* output);
 
@@ -74,6 +78,7 @@ class IcpOdometer {
   ros::Publisher prev_cloud_pub_;
   ros::Publisher aligned_cloud_pub_;
   ros::Publisher icp_odom_pub_;
+  ros::Publisher icp_pose_pub_;
   ros::Publisher icp_odom_path_pub_;
 
   // Odometry path containers
@@ -81,6 +86,7 @@ class IcpOdometer {
   nav_msgs::Path icp_odom_path_;
 
   int verbosity_level_;
+  bool initial_pose_set_;
   bool odom_inited_;
 
   // Translations and rotations estimated by ICP
@@ -92,6 +98,7 @@ class IcpOdometer {
   double voxel_leaf_size_;
 
   // Transforms and intermediate poses
+  ros::Time latest_stamp;
   Pose6DOF icp_latest_transform_;
   std::vector<Pose6DOF> icp_odom_poses_;
 

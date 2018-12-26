@@ -32,7 +32,7 @@ void OctreeMapper::init() {
 void OctreeMapper::loadParameters() {
   pnh_.param("verbosity_level", verbosity_level_, 2);
 
-  // TF frames
+  // Tf frames
   pnh_.param("map_frame", map_frame_, std::string("map"));
   pnh_.param("odom_frame", odom_frame_, std::string("odom"));
   pnh_.param("robot_frame", robot_frame_, std::string("base_link"));
@@ -40,9 +40,9 @@ void OctreeMapper::loadParameters() {
 }
 
 void OctreeMapper::advertisePublishers() {
-  map_cloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>("octree_mapper/map_cloud", 1);
+  map_cloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>("octree_mapper/map_cloud", 1, true);
   nn_cloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>("octree_mapper/nn_cloud", 1);
-  refined_path_pub_ = pnh_.advertise<nav_msgs::Path>("octree_mapper/refined_path", 1);
+  refined_path_pub_ = pnh_.advertise<nav_msgs::Path>("octree_mapper/refined_path", 1, true);
 }
 
 void OctreeMapper::registerSubscribers() {
@@ -154,6 +154,11 @@ bool OctreeMapper::refineTransformICP(const pcl::PointCloud<pcl::PointXYZ>::Ptr&
   }
 
   if (estimateTransformICP(cloud, nn_cloud, transform)) {
+    addPointsToMap(cloud);
+    if (map_cloud_pub_.getNumSubscribers() > 0) {
+      publishPointCloud(map_cloud_, map_frame_, ros::Time().now(), &map_cloud_pub_);
+    }
+
     if (nn_cloud_pub_.getNumSubscribers() > 0) {
       publishPath(prev_pose + (*transform));
     }

@@ -12,6 +12,7 @@
 IcpOdometer::IcpOdometer(const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
     : nh_(nh),
       pnh_(pnh),
+      initial_pose_set_(false),
       odom_inited_(false),
       new_transform_(false),
       clouds_skipped_(0),
@@ -20,7 +21,6 @@ IcpOdometer::IcpOdometer(const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
       icp_latest_transform_(Pose6DOF::getIdentity()),
       prev_cloud_(new pcl::PointCloud<pcl::PointXYZ>()),
       curr_cloud_(new pcl::PointCloud<pcl::PointXYZ>()) {
-  icp_odom_poses_.push_back(Pose6DOF::getIdentity());
   init();
 }
 
@@ -35,7 +35,7 @@ void IcpOdometer::init() {
 void IcpOdometer::loadParameters() {
   pnh_.param("verbosity_level_", verbosity_level_, 1);
 
-  // TF frames
+  // Tf frames
   pnh_.param("map_frame", map_frame_, std::string("map"));
   pnh_.param("odom_frame", odom_frame_, std::string("odom"));
   pnh_.param("robot_frame", robot_frame_, std::string("base_link"));
@@ -46,8 +46,9 @@ void IcpOdometer::loadParameters() {
 }
 
 void IcpOdometer::advertisePublishers() {
-  icp_odom_pub_ = pnh_.advertise<nav_msgs::Odometry>("icp_odometer/odom", 1);
-  icp_odom_path_pub_ = pnh_.advertise<nav_msgs::Path>("icp_odometer/path", 1);
+  icp_odom_pub_ = pnh_.advertise<nav_msgs::Odometry>("icp_odometer/odom", 1, true);
+  icp_pose_pub_ = pnh_.advertise<geometry_msgs::PoseStamped>("icp_odometer/pose", 1, true);
+  icp_odom_path_pub_ = pnh_.advertise<nav_msgs::Path>("icp_odometer/path", 1, true);
 
   // ICP odometry debug topics
   if (verbosity_level_ >= 1) {
@@ -60,26 +61,31 @@ void IcpOdometer::registerSubscribers() {
   laser_cloud_sub_ = nh_.subscribe("laser/point_cloud", 1, &IcpOdometer::laserCloudCallback, this);
 }
 
-bool IcpOdometer::isOdomReady() {
+bool IcpOdometer::isOdomReady() const {
   return odom_inited_;
 }
 
-Pose6DOF IcpOdometer::getFirstPose() {
+void IcpOdometer::setInitialPose(const Pose6DOF& initial_pose) {
+  icp_odom_poses_.push_back(initial_pose);
+  initial_pose_set_ = true;
+}
+
+Pose6DOF IcpOdometer::getFirstPose() const {
   return icp_odom_poses_.front();
 }
 
-Pose6DOF IcpOdometer::getLatestPose() {
+Pose6DOF IcpOdometer::getLatestPose() const {
   return icp_odom_poses_.back();
 }
 
 void IcpOdometer::getEstimates(
-    pcl::PointCloud<pcl::PointXYZ>::Ptr* cloud, Pose6DOF* latest_icp_transform, Pose6DOF* icp_pose, bool* new_transform) {
-  **cloud = *prev_cloud_;
-  *latest_icp_transform = icp_latest_transform_;
+    ros::Time& stamp, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, Pose6DOF& latest_icp_transform, Pose6DOF& icp_pose, bool& new_transform) {
+  cloud = prev_cloud_;
 
-  *icp_pose = icp_odom_poses_.back();
-
-  *new_transform = new_transform_;
+  stamp = latest_stamp;
+  latest_icp_transform = icp_latest_transform_;
+  icp_pose = getLatestPose();
+  new_transform = new_transform_;
 
   icp_latest_transform_.setIdentity();
 
@@ -126,6 +132,9 @@ bool IcpOdometer::updateICPOdometry(const ros::Time& stamp, const Eigen::Matrix4
     if (icp_odom_pub_.getNumSubscribers() > 0) {
       publishOdometry(new_pose.pos, new_pose.rot, map_frame_, odom_frame_, stamp, &icp_odom_pub_);
     }
+    if(icp_pose_pub_.getNumSubscribers() >0) {
+      publishPoseStamped(new_pose.pos, new_pose.rot, map_frame_, stamp, &icp_pose_pub_);
+    }
     if (icp_odom_path_pub_.getNumSubscribers() > 0) {
       publishPath(stamp);
     }
@@ -136,6 +145,18 @@ bool IcpOdometer::updateICPOdometry(const ros::Time& stamp, const Eigen::Matrix4
 
 void IcpOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg) {
   // ROS_INFO("IcpSlam: Cloud callback!");
+  if (!initial_pose_set_) {
+    ROS_WARN("IcpSlam: ICP odometer waiting for initial pose.");
+    return;
+  }
+
+  if (clouds_skipped_ < num_clouds_skip_) {
+    ROS_WARN("IcpSlam: ICP odometer skips cloud");
+    clouds_skipped_++;
+    return;
+  }
+  clouds_skipped_ = 0;
+
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::fromROSMsg(*cloud_msg, *input_cloud);
 
@@ -147,14 +168,7 @@ void IcpOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
     return;
   }
 
-  if (clouds_skipped_ < num_clouds_skip_) {
-    ROS_WARN("IcpSlam: ICP odometer skips cloud");
-    clouds_skipped_++;
-    return;
-  }
-
-  clouds_skipped_ = 0;
-  ros::Time stamp = cloud_msg->header.stamp;
+  latest_stamp = cloud_msg->header.stamp;
 
   // Registration
   // GICP is said to be better, but what about NICP from Serafin?
@@ -172,11 +186,11 @@ void IcpOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
   Eigen::Matrix4d T = icp.getFinalTransformation().cast<double>();
 
   if (icp.hasConverged()) {
-    ROS_WARN("IcpSlam:    ICP odometer converged");
-    std::cout << "Estimated T:\n" << T << std::endl;
+    // ROS_WARN("IcpSlam:    ICP odometer converged");
+    // std::cout << "Estimated T:\n" << T << std::endl;
     Eigen::Matrix4d T_inv = T.inverse();
     pcl::transformPointCloud(*prev_cloud_, *prev_cloud_in_curr_frame, T_inv);
-    bool success = updateICPOdometry(stamp, T);
+    bool success = updateICPOdometry(latest_stamp, T);
     if (success) {
       odom_inited_ = true;
       *prev_cloud_ = *curr_cloud_;
@@ -184,10 +198,10 @@ void IcpOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
 
     if (verbosity_level_ >= 1) {
       if (prev_cloud_pub_.getNumSubscribers() > 0) {
-        publishPointCloud(prev_cloud_, cloud_msg->header.frame_id, stamp, &prev_cloud_pub_);
+        publishPointCloud(prev_cloud_, cloud_msg->header.frame_id, latest_stamp, &prev_cloud_pub_);
       }
       if (aligned_cloud_pub_.getNumSubscribers() > 0) {
-        publishPointCloud(curr_cloud_in_prev_frame, cloud_msg->header.frame_id, stamp, &aligned_cloud_pub_);
+        publishPointCloud(curr_cloud_in_prev_frame, cloud_msg->header.frame_id, latest_stamp, &aligned_cloud_pub_);
       }
     }
   }

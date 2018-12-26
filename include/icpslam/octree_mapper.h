@@ -18,6 +18,7 @@
 class OctreeMapper {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  using Ptr = std::shared_ptr<OctreeMapper>;
 
   OctreeMapper(const ros::NodeHandle& nh, const ros::NodeHandle& pnh);
 

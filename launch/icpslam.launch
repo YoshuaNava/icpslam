@@ -4,7 +4,7 @@
   <arg name="rviz_gui"                        default="true" />
   <arg name="verbosity_level"                 default="1" />
   <arg name="optimization_backend"            default="g2o" />
-  <arg name="publish_map_transform"           default="false" />
+  <arg name="publish_map_transform"           default="true" />
   <arg name="input_cloud_topic"               default="spinning_lidar/assembled_cloud" />
 
 

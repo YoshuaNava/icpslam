@@ -14,6 +14,7 @@
 class RobotOdometer {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  using Ptr = std::shared_ptr<RobotOdometer>;
 
   RobotOdometer(const ros::NodeHandle& nh, const ros::NodeHandle& pnh);
 
@@ -25,11 +26,11 @@ class RobotOdometer {
 
   void registerSubscribers();
 
-  bool isOdomReady();
+  bool isOdomReady() const;
 
-  Pose6DOF getFirstPose();
+  Pose6DOF getFirstPose() const;
 
-  Pose6DOF getLatestPose();
+  Pose6DOF getLatestPose() const;
 
   void getEstimates(Pose6DOF* latest_odom_transform, Pose6DOF* odom_pose, bool* new_transform);
 

@@ -21,7 +21,12 @@ void insertPoseInPath(
 void insertPoseInPath(geometry_msgs::Pose pose, std::string frame_id, ros::Time stamp, nav_msgs::Path& path);
 
 void publishOdometry(
-    Eigen::Vector3d position, Eigen::Quaterniond orientation, std::string ref_frame, std::string robot_frame, ros::Time stamp,
+    const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation, const std::string& ref_frame, const std::string& robot_frame,
+    const ros::Time& stamp, ros::Publisher* pub_ptr);
+
+void publishPoseStamped(
+    const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation, const std::string& ref_frame, const ros::Time& stamp,
     ros::Publisher* pub_ptr);
 
-void publishPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::string frame_id, ros::Time stamp, ros::Publisher* pub_ptr);
+void publishPointCloud(
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, const std::string& frame_id, const ros::Time& stamp, ros::Publisher* pub_ptr);

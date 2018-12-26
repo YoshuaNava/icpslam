@@ -294,8 +294,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 2.5508766174316406
-            Min Value: -0.11005192250013351
+            Max Value: 2.5034244060516357
+            Min Value: -0.04231986403465271
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -398,7 +398,7 @@ Visualization Manager:
               Scale: 1
               Value: true
             Value: false
-          Enabled: true
+          Enabled: false
           Keep: 100
           Name: Odometry
           Position Tolerance: 0.10000000149011612
@@ -413,6 +413,21 @@ Visualization Manager:
             Shaft Radius: 0.05000000074505806
             Value: Arrow
           Topic: /icpslam/icp_odometer/odom
+          Unreliable: false
+          Value: false
+        - Alpha: 1
+          Axes Length: 1
+          Axes Radius: 0.10000000149011612
+          Class: rviz/Pose
+          Color: 0; 211; 240
+          Enabled: true
+          Head Length: 0.30000001192092896
+          Head Radius: 0.10000000149011612
+          Name: Pose
+          Shaft Length: 1
+          Shaft Radius: 0.05000000074505806
+          Shape: Arrow
+          Topic: /icpslam/icp_odometer/pose
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -435,7 +450,7 @@ Visualization Manager:
           Radius: 0.029999999329447746
           Shaft Diameter: 0.10000000149011612
           Shaft Length: 0.10000000149011612
-          Topic: /icpslam/icp_odometer/icp_odom_path
+          Topic: /icpslam/icp_odometer/path
           Unreliable: false
           Value: true
       Enabled: true
@@ -459,7 +474,7 @@ Visualization Manager:
               Scale: 1
               Value: false
             Value: false
-          Enabled: true
+          Enabled: false
           Keep: 100
           Name: Odometry
           Position Tolerance: 0.10000000149011612
@@ -474,6 +489,21 @@ Visualization Manager:
             Shaft Radius: 0.05000000074505806
             Value: Arrow
           Topic: /icpslam/robot_odometer/odometry
+          Unreliable: false
+          Value: false
+        - Alpha: 1
+          Axes Length: 1
+          Axes Radius: 0.10000000149011612
+          Class: rviz/Pose
+          Color: 255; 25; 0
+          Enabled: true
+          Head Length: 0.30000001192092896
+          Head Radius: 0.10000000149011612
+          Name: Pose
+          Shaft Length: 1
+          Shaft Radius: 0.05000000074505806
+          Shape: Arrow
+          Topic: /icpslam/robot_odometer/pose
           Unreliable: false
           Value: true
         - Alpha: 1

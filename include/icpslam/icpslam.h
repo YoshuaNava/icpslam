@@ -63,6 +63,7 @@ class IcpSlam {
   int keyframes_window_;
 
   Eigen::Isometry3d T_map_to_odom_;
+  bool publish_map_transform_;
   tf::TransformBroadcaster tf_broadcaster_;
 
   std::vector<Keyframe<pcl::PointXYZ>::Ptr> keyframes_list_;

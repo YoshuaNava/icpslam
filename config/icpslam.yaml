@@ -18,7 +18,7 @@ wheel_odom_information_matrix:    [0.6, 0.6, 0.6, 0.1, 0.1, 0.1]
 icp_information_matrix:           [0.6, 0.6, 0.6, 0.1, 0.1, 0.1]
 loop_information_matrix:          [0.6, 0.6, 0.6, 0.1, 0.1, 0.1]
 keyframes_window:                 1
-publish_map_transform:            false
+publish_map_transform:            true
 
 # Visualization Markers
 marker_scale_nodes:               0.1

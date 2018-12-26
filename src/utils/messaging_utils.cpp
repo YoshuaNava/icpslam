@@ -24,8 +24,8 @@ void insertPoseInPath(geometry_msgs::Pose pose, std::string frame_id, ros::Time 
 }
 
 void publishOdometry(
-    Eigen::Vector3d position, Eigen::Quaterniond orientation, std::string ref_frame, std::string robot_frame, ros::Time stamp,
-    ros::Publisher* pub_ptr) {
+    const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation, const std::string& ref_frame, const std::string& robot_frame,
+    const ros::Time& stamp, ros::Publisher* pub_ptr) {
   nav_msgs::Odometry odom_msg;
   odom_msg.header.stamp = stamp;
   odom_msg.header.frame_id = ref_frame;
@@ -48,7 +48,27 @@ void publishOdometry(
   pub_ptr->publish(odom_msg);
 }
 
-void publishPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::string frame_id, ros::Time stamp, ros::Publisher* pub_ptr) {
+void publishPoseStamped(
+    const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation, const std::string& ref_frame, const ros::Time& stamp,
+    ros::Publisher* pub_ptr) {
+  geometry_msgs::PoseStamped pose_stamped_msg;
+  pose_stamped_msg.header.stamp = stamp;
+  pose_stamped_msg.header.frame_id = ref_frame;
+
+  // set the position
+  pose_stamped_msg.pose.position.x = position(0);
+  pose_stamped_msg.pose.position.y = position(1);
+  pose_stamped_msg.pose.position.z = position(2);
+  pose_stamped_msg.pose.orientation.x = orientation.x();
+  pose_stamped_msg.pose.orientation.y = orientation.y();
+  pose_stamped_msg.pose.orientation.z = orientation.z();
+  pose_stamped_msg.pose.orientation.w = orientation.w();
+
+  pub_ptr->publish(pose_stamped_msg);
+}
+
+void publishPointCloud(
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, const std::string& frame_id, const ros::Time& stamp, ros::Publisher* pub_ptr) {
   sensor_msgs::PointCloud2 cloud_msg;
   pcl::toROSMsg(*cloud, cloud_msg);
   cloud_msg.header.stamp = stamp;

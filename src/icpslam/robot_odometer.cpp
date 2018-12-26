@@ -25,7 +25,7 @@ void RobotOdometer::init() {
 void RobotOdometer::loadParameters() {
   pnh_.param("verbosity_level_", verbosity_level_, 1);
 
-  // TF frames
+  // Tf frames
   pnh_.param("map_frame", map_frame_, std::string("map"));
   pnh_.param("odom_frame", odom_frame_, std::string("odom"));
   pnh_.param("robot_frame", robot_frame_, std::string("base_link"));
@@ -36,24 +36,24 @@ void RobotOdometer::loadParameters() {
 }
 
 void RobotOdometer::advertisePublishers() {
-  robot_odom_pub_ = pnh_.advertise<nav_msgs::Odometry>("robot_odometer/odometry", 1);
-  robot_pose_pub_ = pnh_.advertise<geometry_msgs::PoseStamped>("robot_odometer/pose", 1);
-  robot_odom_path_pub_ = pnh_.advertise<nav_msgs::Path>("robot_odometer/path", 1);
+  robot_odom_pub_ = pnh_.advertise<nav_msgs::Odometry>("robot_odometer/odometry", 1, true);
+  robot_pose_pub_ = pnh_.advertise<geometry_msgs::PoseStamped>("robot_odometer/pose", 1, true);
+  robot_odom_path_pub_ = pnh_.advertise<nav_msgs::Path>("robot_odometer/path", 1, true);
 }
 
 void RobotOdometer::registerSubscribers() {
   robot_odometry_sub_ = nh_.subscribe(robot_odom_topic_, 5, &RobotOdometer::robotOdometryCallback, this);
 }
 
-bool RobotOdometer::isOdomReady() {
+bool RobotOdometer::isOdomReady() const {
   return odom_inited_;
 }
 
-Pose6DOF RobotOdometer::getFirstPose() {
+Pose6DOF RobotOdometer::getFirstPose() const {
   return robot_odom_poses_.front();
 }
 
-Pose6DOF RobotOdometer::getLatestPose() {
+Pose6DOF RobotOdometer::getLatestPose() const {
   return robot_odom_poses_.back();
 }
 
@@ -77,7 +77,6 @@ void RobotOdometer::robotOdometryCallback(const nav_msgs::Odometry::ConstPtr& ro
   int num_poses = robot_odom_poses_.size();
   if (num_poses == 0) {
     ROS_DEBUG("IcpSlam: Robot odometry first pose.");
-    rodom_first_pose_ = pose_in_odom;
     robot_odom_poses_.push_back(pose_in_odom);
     insertPoseInPath(pose_in_odom.toROSPose(), odom_frame_, stamp, robot_odom_path_);
     odom_inited_ = true;
@@ -102,6 +101,7 @@ void RobotOdometer::robotOdometryCallback(const nav_msgs::Odometry::ConstPtr& ro
   if (robot_pose_pub_.getNumSubscribers() > 0) {
     geometry_msgs::PoseStamped pose_stamped_msg;
     pose_stamped_msg.header.stamp = stamp;
+    pose_stamped_msg.header.frame_id = odom_frame_;
     pose_stamped_msg.pose = robot_odom_msg->pose.pose;
     robot_pose_pub_.publish(pose_stamped_msg);
   }

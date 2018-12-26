@@ -16,7 +16,8 @@ IcpSlam::IcpSlam(const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
       loop_inf_matrix_(Eigen::MatrixXd::Identity(6, 6)),
       wheel_odom_inf_matrix_(Eigen::MatrixXd::Identity(6, 6)),
       num_keyframes_(0),
-      T_map_to_odom_(Eigen::Isometry3d::Identity()) {
+      T_map_to_odom_(Eigen::Isometry3d::Identity()),
+      publish_map_transform_(true) {
   loadParameters();
   advertisePublishers();
   mainLoop();
@@ -56,9 +57,10 @@ void IcpSlam::loadParameters() {
   pnh_.param("odom_frame", odom_frame_, std::string("odom"));
   pnh_.param("robot_frame", robot_frame_, std::string("base_link"));
   pnh_.param("laser_frame", laser_frame_, std::string("laser"));
+  pnh_.param("publish_map_transform", publish_map_transform_, true);
 
   // Slam parameters
-  nh_.param("keyframes_window", keyframes_window_, 1);
+  pnh_.param("keyframes_window", keyframes_window_, 1);
 }
 
 void IcpSlam::advertisePublishers() {
@@ -84,7 +86,6 @@ void IcpSlam::addNewKeyframe(
 
   // Add new keyframe to list
   keyframes_list_.push_back(new_keyframe);
-  std::cout << "hola" << std::endl;
 }
 
 void IcpSlam::computeMapToOdomTransform() {
@@ -107,7 +108,7 @@ void IcpSlam::mainLoop() {
   ROS_INFO("IcpSlam: Main loop started");
 
   bool run_pose_optimization = false, new_transform_icp = false, new_transform_rodom = false;
-  unsigned long num_vertices = 0, iter = 0;
+  unsigned long num_vertices = 1, iter = 0;
 
   Pose6DOF robot_odom_transform, robot_odom_pose, prev_robot_odom_pose, icp_transform, icp_odom_pose, prev_icp_odom_pose, prev_icp_pose;
 
@@ -116,15 +117,17 @@ void IcpSlam::mainLoop() {
   prev_icp_odom_pose = Pose6DOF::getIdentity();
   prev_icp_pose = prev_icp_odom_pose;
   prev_robot_odom_pose = prev_icp_odom_pose;
-  num_vertices++;
+  ros::Time latest_stamp = ros::Time::now();
 
   while (ros::ok()) {
     computeMapToOdomTransform();
-    publishMapToOdomTf(ros::Time::now());
+    if(publish_map_transform_) {
+      publishMapToOdomTf(ros::Time::now());
+    }
 
-    if (icp_odometer_.isOdomReady() && robot_odometer_.isOdomReady()) {
+    if (icp_odometer_.isOdomReady()) {
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
-      icp_odometer_.getEstimates(&cloud, &icp_transform, &icp_odom_pose, &new_transform_icp);
+      icp_odometer_.getEstimates(latest_stamp, cloud, icp_transform, icp_odom_pose, new_transform_icp);
       if (new_transform_icp) {
         if (num_keyframes_ > 0) {
           Pose6DOF refined_transform;
@@ -137,9 +140,9 @@ void IcpSlam::mainLoop() {
         }
 
         if ((Pose6DOF::distanceEuclidean(icp_odom_pose, prev_icp_pose) > KFS_DIST_THRESH) || (num_keyframes_ == 0)) {
-          ROS_INFO("IcpSlam: ##### Number of keyframes = %lu", num_keyframes_ + 1);
           ROS_INFO("IcpSlam:  Keyframe inserted!");
-          addNewKeyframe(num_keyframes_, ros::Time::now(), icp_odom_pose, cloud);
+          ROS_INFO("IcpSlam:    Number of keyframes = %lu", num_keyframes_ + 1);
+          addNewKeyframe(num_keyframes_, latest_stamp, icp_odom_pose, cloud);
           num_keyframes_++;
           prev_icp_pose = icp_odom_pose;
           if (num_keyframes_ % keyframes_window_ == 0)
@@ -151,15 +154,17 @@ void IcpSlam::mainLoop() {
         new_transform_icp = false;
       }
 
-      // robot_odometer.getEstimates(&robot_odom_transform, &robot_odom_pose, &new_transform_rodom);
-      // if(new_transform_rodom)
-      // 	if ((Pose6DOF::distanceEuclidean(robot_odom_pose, prev_robot_odom_pose) > VERTEX_DIST_THRESH) && (num_keyframes > 0))
-      // 	{
-      // add edge to pose graph
-      // 		num_vertices++;
-      // 		prev_robot_odom_pose = robot_odom_pose;
-      // 		new_transform_rodom = false;
-      // 	}
+      if (robot_odometer_.isOdomReady()) {
+        // robot_odometer.getEstimates(&robot_odom_transform, &robot_odom_pose, &new_transform_rodom);
+        // if(new_transform_rodom)
+        // 	if ((Pose6DOF::distanceEuclidean(robot_odom_pose, prev_robot_odom_pose) > VERTEX_DIST_THRESH) && (num_keyframes > 0))
+        // 	{
+        // add edge to pose graph
+        // 		num_vertices++;
+        // 		prev_robot_odom_pose = robot_odom_pose;
+        // 		new_transform_rodom = false;
+        // 	}
+      }
 
       if (run_pose_optimization) {
         // octree_mapper_.resetMap();
@@ -171,8 +176,14 @@ void IcpSlam::mainLoop() {
       publishPoseGraphMarkers(ros::Time::now());
 
       prev_icp_odom_pose = icp_odom_pose;
-      iter++;
+    } else {
+      if (robot_odometer_.isOdomReady()) {
+        robot_odometer_.getEstimates(&robot_odom_transform, &robot_odom_pose, &new_transform_rodom);
+        icp_odometer_.setInitialPose(robot_odom_pose);
+      }
     }
+
+    iter++;
     ros::spinOnce();
   }
 }
