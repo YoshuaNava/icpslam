@@ -51,7 +51,6 @@ class OctreeMapper {
  protected:
   // Constants for mapping
   const float OCTREE_RESOLUTION = 0.3;
-  const float MAX_INCREMENTS_QUEUE = 30;
   const double ICP_FITNESS_THRESH = 0.1;
   const double ICP_MAX_CORR_DIST = 1.0;
   const double ICP_EPSILON = 1e-06;
@@ -62,9 +61,20 @@ class OctreeMapper {
   // Frames, topics and publishers
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
-  std::string laser_frame_, robot_frame_, odom_frame_, map_frame_;
-  std::string map_cloud_topic_, increment_cloud_topic_, nn_cloud_topic_, refined_path_topic_;
-  ros::Publisher map_cloud_pub_, nn_cloud_pub_, refined_path_pub_;
+  std::string laser_frame_;
+  std::string robot_frame_;
+  std::string odom_frame_;
+  std::string map_frame_;
+
+  std::string map_cloud_topic_;
+  std::string increment_cloud_topic_;
+  std::string nn_cloud_topic_;
+  std::string refined_path_topic_;
+
+  ros::Publisher map_cloud_pub_;
+  ros::Publisher nn_cloud_pub_;
+  ros::Publisher refined_path_pub_;
+  
   ros::Subscriber increment_cloud_sub_;
 
   // tf

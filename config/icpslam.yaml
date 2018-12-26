@@ -1,0 +1,35 @@
+
+verbosity_level: 1
+world_frame: world
+map_frame: map
+odom_frame: odom
+robot_frame: base_link
+laser_frame: laser
+
+keyframes_window: 1
+aggregate_clouds: false
+
+num_clouds_skip: 20   # 0 for spinning lidar assembled cloud, 5 for 2D laser, 20 for velodyne
+voxel_leaf_size: 0.2
+
+publish_map_transform: false
+
+
+# <param name="robot_odom_topic" type="string" value="/odometry/filtered" />
+# <param name="icp_odom_topic" type="string" value="/icpslam/odom" />
+# <param name="robot_odom_path_topic" type="string" value="/icpslam/robot_odom_path" />
+# <param name="icp_odom_path_topic" type="string" value="/icpslam/icp_odom_path" />
+# <param name="true_path_topic" type="string" value="/icpslam/true_path" />
+# <param name="refined_path_topic" type="string" value="/icpslam/refined_path" />
+
+# <param name="prev_cloud_topic" type="string" value="/icpslam/prev_cloud" />
+# <param name="aligned_cloud_topic" type="string" value="/icpslam/aligned_cloud" />
+# <param name="increment_cloud_topic" type="string" value="/icpslam/increment_cloud" />
+# <param name="map_cloud_topic" type="string" value="/icpslam/map_cloud" />
+# <param name="nn_cloud_topic" type="string" value="/icpslam/nn_cloud" />
+
+# <!-- Available optimization backends: gtsam, g2o -->
+# <param name="optimization_backend" value="gtsam" />
+# <param name="graph_edges_topic" type="string" value="/icpslam/graph_edges" />
+# <param name="graph_vertices_topic" type="string" value="/icpslam/graph_vertices" />
+# <param name="graph_keyframes_topic" type="string" value="/icpslam/graph_keyframes" />

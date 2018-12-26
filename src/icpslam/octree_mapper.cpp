@@ -26,7 +26,7 @@ void OctreeMapper::init() {
   advertisePublishers();
   registerSubscribers();
 
-  ROS_INFO("Octree mapper started");
+  ROS_INFO("IcpSlam: Octree mapper started");
 }
 
 void OctreeMapper::loadParameters() {
@@ -39,10 +39,11 @@ void OctreeMapper::loadParameters() {
   pnh_.param("laser_frame", laser_frame_, std::string("laser"));
 
   // Input robot odometry and point cloud topics
-  pnh_.param("increment_cloud_topic", increment_cloud_topic_, std::string("icpslam/increment_cloud"));
-  pnh_.param("map_cloud_topic", map_cloud_topic_, std::string("icpslam/map_cloud"));
-  pnh_.param("nn_cloud_topic", nn_cloud_topic_, std::string("icpslam/nn_cloud"));
-  pnh_.param("refined_path_topic", refined_path_topic_, std::string("icpslam/refined_path"));
+
+  pnh_.param("increment_cloud_topic", increment_cloud_topic_, std::string("octree_mapper/increment_cloud"));
+  pnh_.param("nn_cloud_topic", nn_cloud_topic_, std::string("octree_mapper/nn_cloud"));
+  pnh_.param("map_cloud_topic", map_cloud_topic_, std::string("octree_mapper/map_cloud"));
+  pnh_.param("refined_path_topic", refined_path_topic_, std::string("octree_mapper/refined_path"));
 }
 
 void OctreeMapper::advertisePublishers() {
@@ -72,7 +73,7 @@ void OctreeMapper::addPointsToMap(pcl::PointCloud<pcl::PointXYZ>::Ptr input_clou
 }
 
 void OctreeMapper::incrementCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg) {
-  ROS_INFO("Map increment cloud callback!");
+  ROS_INFO("IcpSlam: Map increment cloud callback!");
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZ>()), new_points(new pcl::PointCloud<pcl::PointXYZ>());
 
   pcl::fromROSMsg(*cloud_msg, *input_cloud);

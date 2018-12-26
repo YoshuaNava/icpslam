@@ -59,16 +59,28 @@ class ICPOdometer {
   // ROS node handle, URDF frames, topics and publishers
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
-  std::string laser_frame_, robot_frame_, odom_frame_, map_frame_;
+  std::string laser_frame_;
+  std::string robot_frame_;
+  std::string odom_frame_;
+  std::string map_frame_;
   std::string laser_cloud_topic_;
+  
   ros::Subscriber laser_cloud_sub_;
 
   // Debug topics and publishers
-  std::string prev_cloud_topic_, aligned_cloud_topic_, icp_odom_topic_, icp_odom_path_topic_;
-  ros::Publisher prev_cloud_pub_, aligned_cloud_pub_, icp_odom_pub_, icp_odom_path_pub_;
+  std::string prev_cloud_topic_;
+  std::string aligned_cloud_topic_;
+  std::string icp_odom_topic_;
+  std::string icp_odom_path_topic_;
+  
+  ros::Publisher prev_cloud_pub_;
+  ros::Publisher aligned_cloud_pub_;
+  ros::Publisher icp_odom_pub_;
+  ros::Publisher icp_odom_path_pub_;
 
   // PCL clouds
-  pcl::PointCloud<pcl::PointXYZ>::Ptr prev_cloud_, curr_cloud_;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr prev_cloud_;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr curr_cloud_;
 
   // Odometry path containers
   nav_msgs::Odometry icp_odom_;
@@ -77,8 +89,12 @@ class ICPOdometer {
   // Translations and rotations estimated by ICP
   bool new_transform_;
   double voxel_leaf_size_;
-  int clouds_skipped_, num_clouds_skip_;
+  
+  int clouds_skipped_;
+  int num_clouds_skip_;
+
   bool aggregate_clouds_;
+  
   Pose6DOF icp_latest_transform_;
   std::vector<Pose6DOF> icp_odom_poses_;
   tf::TransformListener tf_listener_;

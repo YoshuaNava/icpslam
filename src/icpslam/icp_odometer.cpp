@@ -27,7 +27,7 @@ void ICPOdometer::init() {
   advertisePublishers();
   registerSubscribers();
 
-  ROS_INFO("ICP odometer initialized");
+  ROS_INFO("IcpSlam: ICP odometer initialized");
 }
 
 void ICPOdometer::loadParameters() {
@@ -40,7 +40,7 @@ void ICPOdometer::loadParameters() {
   pnh_.param("laser_frame", laser_frame_, std::string("laser"));
 
   // Input robot odometry and point cloud topics
-  pnh_.param("laser_cloud_topic", laser_cloud_topic_, std::string("spinning_lidar/assembled_cloud"));
+  pnh_.param("laser_cloud_topic", laser_cloud_topic_, std::string("input_cloud"));
 
   pnh_.param("voxel_leaf_size", voxel_leaf_size_, 0.05);
   pnh_.param("aggregate_clouds", aggregate_clouds_, false);
@@ -48,11 +48,11 @@ void ICPOdometer::loadParameters() {
 
   // ICP odometry debug topics
   if (verbosity_level_ >= 1) {
-    pnh_.param("prev_cloud_topic", prev_cloud_topic_, std::string("icpslam/prev_cloud"));
-    pnh_.param("aligned_cloud_topic", aligned_cloud_topic_, std::string("icpslam/aligned_cloud"));
+    pnh_.param("prev_cloud_topic", prev_cloud_topic_, std::string("icp_odometer/prev_cloud"));
+    pnh_.param("aligned_cloud_topic", aligned_cloud_topic_, std::string("icp_odometer/aligned_cloud"));
 
-    pnh_.param("icp_odom_topic", icp_odom_topic_, std::string("icpslam/odom"));
-    pnh_.param("icp_odom_path_topic", icp_odom_path_topic_, std::string("icpslam/icp_odom_path"));
+    pnh_.param("icp_odom_topic", icp_odom_topic_, std::string("icp_odometer/odom"));
+    pnh_.param("icp_odom_path_topic", icp_odom_path_topic_, std::string("icp_odometer/icp_odom_path"));
   }
 }
 
@@ -68,7 +68,7 @@ void ICPOdometer::advertisePublishers() {
 }
 
 void ICPOdometer::registerSubscribers() {
-  laser_cloud_sub_ = nh_.subscribe(laser_cloud_topic_, 1, &ICPOdometer::laserCloudCallback, this);
+  laser_cloud_sub_ = nh_.subscribe("laser/point_cloud", 1, &ICPOdometer::laserCloudCallback, this);
 }
 
 bool ICPOdometer::isOdomReady() {
@@ -114,7 +114,7 @@ void ICPOdometer::publishPath() {
 }
 
 bool ICPOdometer::updateICPOdometry(Eigen::Matrix4d T) {
-  // ROS_INFO("ICP odometry update!");
+  // ROS_INFO("IcpSlam: ICP odometry update!");
   Pose6DOF transform(T, ros::Time().now());
   Pose6DOF prev_pose = getLatestPose();
   Pose6DOF new_pose = prev_pose + transform;
@@ -142,7 +142,7 @@ bool ICPOdometer::updateICPOdometry(Eigen::Matrix4d T) {
 }
 
 void ICPOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg) {
-  // ROS_INFO("Cloud callback!");
+  // ROS_INFO("IcpSlam: Cloud callback!");
   // std::clock_t start;
   // start = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZ>());
@@ -170,7 +170,7 @@ void ICPOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
   Eigen::Matrix4d T = icp.getFinalTransformation().cast<double>();
 
   if (icp.hasConverged()) {
-    // ROS_INFO("		ICP converged");
+    // ROS_INFO("IcpSlam:		ICP converged");
     // std::cout << "Estimated T:\n" << T << std::endl;
     Eigen::Matrix4d T_inv = T.inverse();
     pcl::transformPointCloud(*prev_cloud_, *prev_cloud_in_curr_frame, T_inv);

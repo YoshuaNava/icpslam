@@ -46,21 +46,24 @@ class RobotOdometer {
   // ROS node handle, URDF frames, topics and publishers
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
-  std::string laser_frame_, robot_frame_, odom_frame_, map_frame_;
-  std::string robot_odom_topic_, robot_odom_path_topic_;
+  std::string laser_frame_;
+  std::string robot_frame_;
+  std::string odom_frame_;
+  std::string map_frame_;
+
+  std::string robot_odom_topic_;
+  std::string robot_odom_path_topic_;
+
   ros::Publisher robot_odom_path_pub_;
   ros::Subscriber robot_odometry_sub_;
 
-  // Debug topics and publishers
-  std::string true_path_topic_;
-  ros::Publisher true_path_pub_;
-
   // Odometry path containers
-  nav_msgs::Path robot_odom_path_, true_path_;
+  nav_msgs::Path robot_odom_path_;
 
   // Translations and rotations estimated by robot odometry
   bool new_transform_;
-  Pose6DOF rodom_first_pose_, odom_latest_transform_;
+  Pose6DOF rodom_first_pose_;
+  Pose6DOF odom_latest_transform_;
   std::vector<Pose6DOF> robot_odom_poses_;
   tf::TransformListener tf_listener_;
 };

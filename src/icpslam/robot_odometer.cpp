@@ -19,7 +19,7 @@ void RobotOdometer::init() {
   advertisePublishers();
   registerSubscribers();
 
-  ROS_INFO("Robot odometer initialized");
+  ROS_INFO("IcpSlam: Robot odometer initialized");
 }
 
 void RobotOdometer::loadParameters() {
@@ -36,18 +36,12 @@ void RobotOdometer::loadParameters() {
 
   // Robot odometry debug topics
   if (verbosity_level_ >= 1) {
-    pnh_.param("robot_odom_path_topic", robot_odom_path_topic_, std::string("icpslam/robot_odom_path"));
-    pnh_.param("true_path_topic", true_path_topic_, std::string("icpslam/true_path"));
+    pnh_.param("robot_odom_path_topic", robot_odom_path_topic_, std::string("robot_odometer/path"));
   }
 }
 
 void RobotOdometer::advertisePublishers() {
   robot_odom_path_pub_ = pnh_.advertise<nav_msgs::Path>(robot_odom_path_topic_, 1);
-
-  // Robot odometry debug topics
-  if (verbosity_level_ >= 1) {
-    true_path_pub_ = pnh_.advertise<nav_msgs::Path>(true_path_topic_, 1);
-  }
 }
 
 void RobotOdometer::registerSubscribers() {
@@ -75,24 +69,9 @@ void RobotOdometer::getEstimates(Pose6DOF* latest_odom_transform, Pose6DOF* odom
 }
 
 void RobotOdometer::robotOdometryCallback(const nav_msgs::Odometry::ConstPtr& robot_odom_msg) {
-  // ROS_INFO("Robot odometry callback!");
+  // ROS_INFO("IcpSlam: Robot odometry callback!");
   geometry_msgs::PoseWithCovariance pose_cov_msg = robot_odom_msg->pose;
   Pose6DOF pose_in_odom(pose_cov_msg, robot_odom_msg->header.stamp), pose_in_map;
-
-  if (tf_listener_.canTransform(map_frame_, odom_frame_, ros::Time(0))) {
-    pose_in_map = Pose6DOF::transformToFixedFrame(pose_in_odom, map_frame_, odom_frame_, &tf_listener_);
-    insertPoseInPath(pose_in_map.toROSPose(), map_frame_, robot_odom_msg->header.stamp, true_path_);
-    true_path_.header.stamp = ros::Time().now();
-    true_path_.header.frame_id = map_frame_;
-    true_path_pub_.publish(true_path_);
-    // if(clouds_skipped_ >= num_clouds_skip_)
-    // {
-    // 	std::cout << "Ground truth:\n" << pose_in_map.toStringQuat("   ");
-    // }
-  } else {
-    ROS_ERROR("Transform from odom to map frame not available");
-    // return;
-  }
 
   Pose6DOF pose_debug = pose_in_odom - rodom_first_pose_;
   int num_poses = robot_odom_poses_.size();
