@@ -27,7 +27,7 @@ class IcpSlam {
 
   void computeMapToOdomTransform();
 
-  void publishMapToOdomTf(const ros::Time& stamp);
+  void publishMapToOdomTf(const ros::Time& stamp = ros::Time::now());
 
   void mainLoop();
 

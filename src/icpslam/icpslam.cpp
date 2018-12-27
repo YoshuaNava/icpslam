@@ -79,8 +79,8 @@ void IcpSlam::addNewKeyframe(
   if (num_keyframes_ > 0) {
     // Add edge between newest and previous keyframe
     const auto& prev_keyframe = keyframes_list_.back();
-    Eigen::Isometry3d T_between_keyframes =
-        new_keyframe->pose_in_odom_.toEigenIsometry3().inverse() * prev_keyframe->pose_in_odom_.toEigenIsometry3();
+    Pose6DOF relative_pose = new_keyframe->pose_in_odom_.inverse() + prev_keyframe->pose_in_odom_;
+    Eigen::Isometry3d T_between_keyframes = relative_pose.toEigenIsometry3();
     pose_graph_->addSe3Edge(new_keyframe->graph_node_, prev_keyframe->graph_node_, T_between_keyframes, icp_inf_matrix_);
   }
 
@@ -100,7 +100,7 @@ void IcpSlam::computeMapToOdomTransform() {
 void IcpSlam::publishMapToOdomTf(const ros::Time& stamp) {
   computeMapToOdomTransform();
   geometry_msgs::TransformStamped map_to_odom_tf =
-      getTfStampedFromEigenMatrix(stamp, T_map_to_odom_.matrix().cast<float>(), map_frame_, odom_frame_);
+      getTfStampedFromEigenMatrix(ros::Time::now(), T_map_to_odom_.matrix().cast<float>(), map_frame_, odom_frame_);
   tf_broadcaster_.sendTransform(map_to_odom_tf);
 }
 
@@ -121,8 +121,8 @@ void IcpSlam::mainLoop() {
 
   while (ros::ok()) {
     computeMapToOdomTransform();
-    if(publish_map_transform_) {
-      publishMapToOdomTf(ros::Time::now());
+    if (publish_map_transform_) {
+      publishMapToOdomTf();
     }
 
     if (icp_odometer_.isOdomReady()) {
@@ -131,26 +131,25 @@ void IcpSlam::mainLoop() {
       if (new_transform_icp) {
         if (num_keyframes_ > 0) {
           Pose6DOF refined_transform;
-          // std::cout << "Original transform:\n" << icp_transform;
-          bool icp_refined = octree_mapper_.refineTransformICP(cloud, prev_icp_odom_pose, &refined_transform);
-          if (icp_refined) {
-            // icp_transform = refined_transform;
-            icp_odom_pose = prev_icp_odom_pose + icp_transform;
+          ROS_DEBUG("IcpSlam: Transform refinement using nearest neighbor search");
+          bool registration_success = octree_mapper_.refineTransformAndGrowMap(latest_stamp, cloud, prev_icp_odom_pose, refined_transform);
+          if (registration_success) {
+            ROS_DEBUG("IcpSlam: Refinement successful");
+            icp_transform = refined_transform;
           }
+          icp_odom_pose = prev_icp_odom_pose + icp_transform;
         }
 
         if ((Pose6DOF::distanceEuclidean(icp_odom_pose, prev_icp_pose) > KFS_DIST_THRESH) || (num_keyframes_ == 0)) {
-          ROS_INFO("IcpSlam:  Keyframe inserted!");
           ROS_INFO("IcpSlam:    Number of keyframes = %lu", num_keyframes_ + 1);
           addNewKeyframe(num_keyframes_, latest_stamp, icp_odom_pose, cloud);
           num_keyframes_++;
+          num_vertices++;
           prev_icp_pose = icp_odom_pose;
-          if (num_keyframes_ % keyframes_window_ == 0)
+          if (num_keyframes_ % keyframes_window_ == 0) {
             run_pose_optimization = true;
+          }
         }
-
-        num_vertices++;
-        prev_robot_odom_pose = robot_odom_pose;
         new_transform_icp = false;
       }
 
@@ -159,17 +158,17 @@ void IcpSlam::mainLoop() {
         // if(new_transform_rodom)
         // 	if ((Pose6DOF::distanceEuclidean(robot_odom_pose, prev_robot_odom_pose) > VERTEX_DIST_THRESH) && (num_keyframes > 0))
         // 	{
-        // add edge to pose graph
+        // Missing! -> add edge to pose graph ()
         // 		num_vertices++;
         // 		prev_robot_odom_pose = robot_odom_pose;
         // 		new_transform_rodom = false;
         // 	}
+        // prev_robot_odom_pose = robot_odom_pose;
       }
 
       if (run_pose_optimization) {
         // octree_mapper_.resetMap();
-        // pose_optimizer->publishRefinedMap();
-        // pose_graph_->optimize();
+        pose_graph_->optimize(true);
         run_pose_optimization = false;
       }
 
@@ -177,6 +176,7 @@ void IcpSlam::mainLoop() {
 
       prev_icp_odom_pose = icp_odom_pose;
     } else {
+      // Bootstrap the icp odometer with the robot odometry initial pose
       if (robot_odometer_.isOdomReady()) {
         robot_odometer_.getEstimates(&robot_odom_transform, &robot_odom_pose, &new_transform_rodom);
         icp_odometer_.setInitialPose(robot_odom_pose);
@@ -190,7 +190,7 @@ void IcpSlam::mainLoop() {
 
 void IcpSlam::publishPoseGraphMarkers(const ros::Time& stamp) {
   visualization_msgs::MarkerArray marker_array;
-  marker_array.markers.resize(3);
+  marker_array.markers.resize(2);
 
   // keyframe nodes
   visualization_msgs::Marker& traj_marker = marker_array.markers[0];
@@ -246,6 +246,7 @@ void IcpSlam::publishPoseGraphMarkers(const ros::Time& stamp) {
     if (edge_se3) {
       g2o::VertexSE3* v1 = dynamic_cast<g2o::VertexSE3*>(edge_se3->vertices()[0]);
       g2o::VertexSE3* v2 = dynamic_cast<g2o::VertexSE3*>(edge_se3->vertices()[1]);
+      // Eigen::Isometry3d relative_pose = 
       Eigen::Vector3d pt1 = v1->estimate().translation();
       Eigen::Vector3d pt2 = v2->estimate().translation();
 

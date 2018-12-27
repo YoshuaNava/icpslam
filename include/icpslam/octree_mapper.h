@@ -35,23 +35,22 @@ class OctreeMapper {
   /* This function is inspired on https://github.com/erik-nelson/point_cloud_mapper */
   void addPointsToMap(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud);
 
-  void incrementCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg);
-
-  bool refineTransformICP(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, const Pose6DOF& prev_pose, Pose6DOF* transform);
-
-  bool approxNearestNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud, pcl::PointCloud<pcl::PointXYZ>* neighbors);
+  bool approxNearestNeighbors(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& nearest_neighbors);
 
   void transformCloudToPoseFrame(
-      const pcl::PointCloud<pcl::PointXYZ>& in_cloud, const Pose6DOF& pose, pcl::PointCloud<pcl::PointXYZ>* out_cloud);
+      const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud, const Pose6DOF& pose, pcl::PointCloud<pcl::PointXYZ>::Ptr& out_cloud);
+
+  bool estimateTransformICP(
+      const pcl::PointCloud<pcl::PointXYZ>::Ptr& curr_cloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr& nn_cloud, Pose6DOF& transform);
 
   void publishPath(const Pose6DOF& latest_pose);
 
-  bool estimateTransformICP(
-      const pcl::PointCloud<pcl::PointXYZ>::Ptr& curr_cloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr& nn_cloud, Pose6DOF* transform);
+  bool refineTransformAndGrowMap(
+      const ros::Time& stamp, const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, const Pose6DOF& prev_pose, Pose6DOF& transform);
 
  protected:
   // Constants for mapping
-  const float OCTREE_RESOLUTION = 0.3;
+  // const float OCTREE_RESOLUTION = 0.3;
   const double ICP_FITNESS_THRESH = 0.1;
   const double ICP_MAX_CORR_DIST = 1.0;
   const double ICP_EPSILON = 1e-06;
@@ -71,10 +70,13 @@ class OctreeMapper {
 
   ros::Publisher map_cloud_pub_;
   ros::Publisher nn_cloud_pub_;
+  ros::Publisher registered_cloud_pub_;
   ros::Publisher refined_path_pub_;
 
   // tf
   tf::TransformListener tf_listener_;
+
+  double octree_resolution_;
 
   // PCL clouds for mapping
   pcl::PointCloud<pcl::PointXYZ>::Ptr map_cloud_;
