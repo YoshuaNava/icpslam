@@ -5,7 +5,7 @@
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <tf/transform_listener.h>
+#include <tf2_ros/transform_listener.h>
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -73,7 +73,8 @@ class IcpOdometer {
   std::string map_frame_;
 
   ros::Subscriber laser_cloud_sub_;
-  tf::TransformListener tf_listener_;
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;
 
   ros::Publisher prev_cloud_pub_;
   ros::Publisher aligned_cloud_pub_;

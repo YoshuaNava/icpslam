@@ -1,7 +1,7 @@
 
 #include "icpslam/icp_odometer.h"
 
-#include <tf/transform_datatypes.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/impl/transforms.hpp>
@@ -12,6 +12,7 @@
 IcpOdometer::IcpOdometer(const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
     : nh_(nh),
       pnh_(pnh),
+      tf_listener_(tf_buffer_),
       initial_pose_set_(false),
       odom_inited_(false),
       new_transform_(false),
@@ -132,7 +133,7 @@ bool IcpOdometer::updateICPOdometry(const ros::Time& stamp, const Eigen::Matrix4
     if (icp_odom_pub_.getNumSubscribers() > 0) {
       publishOdometry(new_pose.pos, new_pose.rot, map_frame_, odom_frame_, stamp, &icp_odom_pub_);
     }
-    if(icp_pose_pub_.getNumSubscribers() >0) {
+    if (icp_pose_pub_.getNumSubscribers() > 0) {
       publishPoseStamped(new_pose.pos, new_pose.rot, map_frame_, stamp, &icp_pose_pub_);
     }
     if (icp_odom_path_pub_.getNumSubscribers() > 0) {
@@ -156,9 +157,21 @@ void IcpOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
     return;
   }
   clouds_skipped_ = 0;
-
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZ>());
-  pcl::fromROSMsg(*cloud_msg, *input_cloud);
+
+  if (cloud_msg->header.frame_id != robot_frame_) {
+    try {
+      geometry_msgs::TransformStamped robot_transform_odom =
+          tf_buffer_.lookupTransform(robot_frame_, cloud_msg->header.frame_id, cloud_msg->header.stamp, ros::Duration(0.03));
+      sensor_msgs::PointCloud2 cloud_out;
+      tf2::doTransform(*cloud_msg, cloud_out, robot_transform_odom);
+      pcl::fromROSMsg(cloud_out, *input_cloud);
+    } catch (tf2::TransformException& ex) {
+      ROS_WARN("%s", ex.what());
+    }
+  } else {
+    pcl::fromROSMsg(*cloud_msg, *input_cloud);
+  }
 
   // Filter cloud
   voxelFilterCloud(&input_cloud, &curr_cloud_);
