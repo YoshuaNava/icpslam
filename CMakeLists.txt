@@ -1,10 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(icpslam)
 
-add_compile_options(-std=c++11)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O3 -march=native")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3 -march=native")
+set(CMAKE_CXX_STANDARD 11)
 
 find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
@@ -17,11 +14,14 @@ find_package(catkin REQUIRED
     sensor_msgs
     std_msgs
     tf
+    tf2
+    tf2_ros
 )
 
 catkin_package(
   DEPENDS EIGEN3 PCL
-  INCLUDE_DIRS include
+  INCLUDE_DIRS 
+    include
   CATKIN_DEPENDS
     pcl_conversions
     pcl_ros
@@ -30,13 +30,16 @@ catkin_package(
     sensor_msgs
     std_msgs
     tf
+    tf2
+    tf2_ros
 )
 
 include_directories(
   include
-  ${catkin_INCLUDE_DIRS}
-  ${EIGEN3_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
+  SYSTEM
+    ${catkin_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
 )
 
 ## Build utils library
