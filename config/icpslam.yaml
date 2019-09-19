@@ -17,9 +17,9 @@ voxel_leaf_size:                  0.2
 octree_resolution:                0.2
 
 # Pose graph
-wheel_odom_information_matrix:    [0.2, 0.2, 0.2, 0.1, 0.1, 0.1]
-icp_information_matrix:           [0.06, 0.06, 0.06, 0.01, 0.01, 0.01]
-loop_information_matrix:          [0.1, 0.1, 0.1, 0.05, 0.05, 0.05]
+wheel_odom_information_matrix:    [0.2, 0.2, 100.0, 0.5, 0.5, 0.1]
+icp_information_matrix:           [0.06, 0.06, 10.0, 0.001, 0.001, 2.0]
+loop_information_matrix:          [0.1, 0.1, 5.0, 0.05, 0.05, 0.05]
 keyframes_window:                 4
 publish_map_transform:            true
 

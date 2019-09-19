@@ -198,7 +198,7 @@ void IcpOdometer::laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
   icp.align(*curr_cloud_in_prev_frame);
   Eigen::Matrix4d T = icp.getFinalTransformation().cast<double>();
 
-  if (icp.hasConverged()) {
+  if (icp.hasConverged() && icp.getFitnessScore() < 20) {
     // ROS_WARN("IcpSlam:    ICP odometer converged");
     // std::cout << "Estimated T:\n" << T << std::endl;
     Eigen::Matrix4d T_inv = T.inverse();

@@ -19,14 +19,14 @@ class Keyframe {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   using Ptr = std::shared_ptr<Keyframe>;
+
   typedef pcl::PointCloud<PointType> PclPointCloud;
   typedef typename pcl::PointCloud<PointType>::Ptr PclPointCloudPtr;
 
-  Keyframe(const unsigned long& id) : id_(id), point_cloud_(new PclPointCloud()) {}
+  Keyframe(const unsigned long& id) : id_(id), graph_node_(nullptr), point_cloud_(new PclPointCloud()) {}
 
   Keyframe(const unsigned long& id, const ros::Time& stamp, const Pose6DOF& pose_in_odom, const PclPointCloudPtr& point_cloud)
-      : id_(id), stamp_(stamp), pose_in_odom_(pose_in_odom), point_cloud_(point_cloud) {
-  }
+      : id_(id), stamp_(stamp), pose_in_odom_(pose_in_odom), graph_node_(nullptr), point_cloud_(point_cloud) {}
 
   //  protected:
   const unsigned long id_;

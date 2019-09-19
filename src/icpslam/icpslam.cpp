@@ -167,7 +167,7 @@ void IcpSlam::mainLoop() {
       }
 
       if (run_pose_optimization) {
-        // octree_mapper_.resetMap();
+        octree_mapper_.resetMap();
         pose_graph_->optimize(true);
         run_pose_optimization = false;
       }
@@ -235,12 +235,12 @@ void IcpSlam::publishPoseGraphMarkers(const ros::Time& stamp) {
   edge_marker.pose.orientation.w = 1.0;
   edge_marker.scale.x = marker_scale_edges_;
 
-  size_t num_edges_graph = pose_graph_->graph->edges().size();
+  size_t num_edges_graph = pose_graph_->optimizer->edges().size();
   edge_marker.points.resize(num_edges_graph * 2);
   edge_marker.colors.resize(num_edges_graph * 2);
 
-  auto edge_itr = pose_graph_->graph->edges().begin();
-  for (size_t i = 0; edge_itr != pose_graph_->graph->edges().end(); edge_itr++, i++) {
+  auto edge_itr = pose_graph_->optimizer->edges().begin();
+  for (size_t i = 0; edge_itr != pose_graph_->optimizer->edges().end(); edge_itr++, i++) {
     g2o::HyperGraph::Edge* edge = *edge_itr;
     g2o::EdgeSE3* edge_se3 = dynamic_cast<g2o::EdgeSE3*>(edge);
     if (edge_se3) {
@@ -257,8 +257,8 @@ void IcpSlam::publishPoseGraphMarkers(const ros::Time& stamp) {
       edge_marker.points[i * 2 + 1].y = pt2.y();
       edge_marker.points[i * 2 + 1].z = pt2.z();
 
-      double p1 = static_cast<double>(v1->id()) / pose_graph_->graph->vertices().size();
-      double p2 = static_cast<double>(v2->id()) / pose_graph_->graph->vertices().size();
+      double p1 = static_cast<double>(v1->id()) / pose_graph_->optimizer->vertices().size();
+      double p2 = static_cast<double>(v2->id()) / pose_graph_->optimizer->vertices().size();
 
       if (std::abs(v1->id() - v2->id()) > 2) {
         edge_marker.points[i * 2].z += 0.5;

@@ -50,11 +50,10 @@ class OctreeMapper {
 
  protected:
   // Constants for mapping
-  // const float OCTREE_RESOLUTION = 0.3;
   const double ICP_FITNESS_THRESH = 0.1;
   const double ICP_MAX_CORR_DIST = 1.0;
   const double ICP_EPSILON = 1e-06;
-  const double ICP_MAX_ITERS = 10;
+  const double ICP_MAX_ITERS = 30;
 
   int verbosity_level_;
 

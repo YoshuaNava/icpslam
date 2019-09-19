@@ -115,6 +115,7 @@ bool OctreeMapper::estimateTransformICP(
   Eigen::Matrix4d T = icp.getFinalTransformation().cast<double>();
 
   if (icp.hasConverged()) {
+    ROS_WARN("ICP converged");
     transform = Pose6DOF(T, ros::Time().now());
     return true;
   }
@@ -154,7 +155,7 @@ bool OctreeMapper::refineTransformAndGrowMap(
   if (estimateTransformICP(cloud, nn_cloud, transform)) {
     Pose6DOF refined_pose = raw_pose + transform;
     transformCloudToPoseFrame(cloud, refined_pose, cloud_in_map);
-    // addPointsToMap(cloud_in_map);
+    addPointsToMap(cloud_in_map);
 
     if (map_cloud_pub_.getNumSubscribers() > 0) {
       publishPointCloud(map_cloud_, map_frame_, stamp, &map_cloud_pub_);
