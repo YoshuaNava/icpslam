@@ -1,0 +1,31 @@
+
+# Verbosity
+verbosity_level:                  1
+
+# Tf frames
+world_frame:                      world
+map_frame:                        map
+odom_frame:                       odom
+robot_frame:                      base_link
+laser_frame:                      laser
+
+# ICP odometer
+num_clouds_skip:                  0   # 0 for spinning lidar assembled cloud, 5 for 2D laser, 20 for velodyne
+voxel_leaf_size:                  0.2
+
+# Octree mapper
+octree_resolution:                0.2
+
+# Pose graph
+wheel_odom_information_matrix:    [0.2, 0.2, 100.0, 0.5, 0.5, 0.1]
+icp_information_matrix:           [0.06, 0.06, 10.0, 0.001, 0.001, 2.0]
+loop_information_matrix:          [0.1, 0.1, 5.0, 0.05, 0.05, 0.05]
+keyframes_window:                 4
+publish_map_transform:            true
+
+# Visualization Markers
+marker_scale_nodes:               0.1
+marker_scale_edges:               0.05
+icp_nodes_markers_color:          [0.0, 1.0, 0.0, 1.0]
+odom_nodes_markers_color:         [0.0, 0.5, 0.5, 1.0]
+edges_markers_color:              [0.0, 0.0, 1.0, 1.0]

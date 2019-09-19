@@ -1,52 +1,25 @@
 <?xml version="1.0"?>
 <launch> 
 
-    <node name="icpslam_node" pkg="icpslam" type="icpslam_online" output="screen" >
-        <param name="verbosity_level" value="1" />
-        <param name="world_frame" type="string" value="world" />
-        <param name="map_frame" type="string" value="map" />
-        <param name="odom_frame" type="string" value="odom" />
-        <param name="robot_frame" type="string" value="base_link" />
-        <param name="laser_frame" type="string" value="laser" />
-
-        <param name="robot_odom_topic" type="string" value="/odometry/filtered" />
-        <param name="icp_odom_topic" type="string" value="/icpslam/odom" />
-        <param name="robot_odom_path_topic" type="string" value="/icpslam/robot_odom_path" />
-        <param name="icp_odom_path_topic" type="string" value="/icpslam/icp_odom_path" />
-        <param name="true_path_topic" type="string" value="/icpslam/true_path" />
-        <param name="refined_path_topic" type="string" value="/icpslam/refined_path" />
+  <arg name="rviz_gui"                        default="true" />
+  <arg name="verbosity_level"                 default="1" />
+  <arg name="optimization_backend"            default="g2o" />
+  <arg name="publish_map_transform"           default="true" />
+  <arg name="input_cloud_topic"               default="spinning_lidar/assembled_cloud" />
 
 
-        <param name="keyframes_window" value="1" />
-        <param name="voxel_leaf_size" value="0.05" />
-        <param name="aggregate_clouds" type="bool" value="false" />
+  <node name="icpslam" pkg="icpslam" type="icpslam_node" output="screen" >
+    <rosparam command="load"                  file="$(find icpslam)/config/icpslam.yaml"/>
+    <param name="verbosity_level"             value="$(arg verbosity_level)" />
+    <!-- Available optimization backends: gtsam, g2o -->
+    <param name="optimization_backend"        value="$(arg optimization_backend)" />
+    <param name="publish_map_transform"       value="$(arg publish_map_transform)" />
 
-		<param name="laser_cloud_topic" type="string" value="/front/cloud" />
-		<param name="num_clouds_skip" value="5" />
+    <remap from="/laser/point_cloud"          to="$(arg input_cloud_topic)" />
+  </node>
 
-		<param name="laser_cloud_topic" type="string" value="/spinning_lidar/assembled_cloud" />
-		<param name="num_clouds_skip" value="0" />
-
-<!--         <param name="laser_cloud_topic" type="string" value="/velodyne_points" />
-        <param name="num_clouds_skip" value="20" />
-        <param name="voxel_leaf_size" value="0.5" />
-        <param name="robot_frame" type="string" value="velodyne" /> -->
-        
-        <param name="prev_cloud_topic" type="string" value="/icpslam/prev_cloud" />
-        <param name="aligned_cloud_topic" type="string" value="/icpslam/aligned_cloud" />
-        <param name="increment_cloud_topic" type="string" value="/icpslam/increment_cloud" />
-        <param name="map_cloud_topic" type="string" value="/icpslam/map_cloud" />
-        <param name="nn_cloud_topic" type="string" value="/icpslam/nn_cloud" />
-
-        <!-- Available optimization backends: gtsam, g2o -->
-        <param name="optimization_backend" value="gtsam" />
-		<param name="graph_edges_topic" type="string" value="/icpslam/graph_edges" />
-		<param name="graph_vertices_topic" type="string" value="/icpslam/graph_vertices" />
-		<param name="graph_keyframes_topic" type="string" value="/icpslam/graph_keyframes" />
-
-		<param name="publish_map_transform" type="bool" value="false" />
-    </node>
-
-    <!-- <node name="lidar_scan_to_cloud_node" pkg="spinning_lidar_utils" type="lidar_scan_to_cloud" output="screen" /> -->
-
+  <!-- Rviz -->
+  <group if="$(arg rviz_gui)">
+    <node name="rviz_icpslam" pkg="rviz" type="rviz" args="-d $(find icpslam)/rviz/live_slam.rviz" />
+  </group>
 </launch>

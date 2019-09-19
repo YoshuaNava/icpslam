@@ -1,15 +1,14 @@
-
-#ifndef GEOMETRIC_UTILS_H
-#define GEOMETRIC_UTILS_H
+#pragma once
 
 #include <ros/ros.h>
-#include <std_msgs/Float64.h>
+
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseWithCovariance.h>
 #include <geometry_msgs/Transform.h>
 #include <nav_msgs/Odometry.h>
-#include <tf/transform_listener.h>
+#include <std_msgs/Float64.h>
 #include <tf/transform_datatypes.h>
+
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
@@ -41,6 +40,11 @@ std::string getStringFromQuaternion(Eigen::Quaterniond q);
 
 tf::Pose differenceBetweenPoses(geometry_msgs::Pose p1, geometry_msgs::Pose p2);
 
-double lengthOfVector(tf::Pose vector);
+double lengthOfRosPose(tf::Pose vector);
 
-#endif
+Eigen::Isometry3d getEigenIsometry3FromRosOdometry(const nav_msgs::Odometry odom_msg);
+
+nav_msgs::Odometry getRosOdometryFromEigenIsometry3(const std::string frame_id, const Eigen::Isometry3d& odom, const ros::Time stamp);
+
+geometry_msgs::TransformStamped getTfStampedFromEigenMatrix(
+    const ros::Time& stamp, const Eigen::Matrix4f& pose, const std::string& frame_id, const std::string& child_frame_id);

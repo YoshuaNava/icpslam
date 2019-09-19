@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>icpslam</name>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
   <description>The icpslam package</description>
 
   <maintainer email="yoshua.nava@kth.se">Yoshua Nava</maintainer>
@@ -10,27 +10,14 @@
   <license>TODO</license>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>cmake_modules</build_depend>
-  <build_depend>gazebo_msgs</build_depend>
-  <build_depend>laser_assembler</build_depend>
-  <build_depend>laser_geometry</build_depend>
-  <build_depend>message_filters</build_depend>
-  <build_depend>pcl_ros</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <build_depend>tf</build_depend>
-
-  <run_depend>cmake_modules</run_depend>
-  <run_depend>gazebo_msgs</run_depend>
-  <run_depend>laser_assembler</run_depend>
-  <run_depend>laser_geometry</run_depend>
-  <run_depend>message_filters</run_depend>
-  <run_depend>pcl_ros</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>tf</run_depend>
-
+  <depend>pcl_conversions</depend>
+  <depend>pcl_ros</depend>
+  <depend>pose_graph_utils</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
 
 </package>

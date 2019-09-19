@@ -1,95 +1,109 @@
-
-#ifndef ICP_ODOMETER_H
-#define ICP_ODOMETER_H
+#pragma once
 
 #include <ros/ros.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <geometry_msgs/Point.h>
-#include <geometry_msgs/Quaternion.h>
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <nav_msgs/Path.h>
-#include <nav_msgs/Odometry.h>
-#include <tf/transform_listener.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_datatypes.h>
 
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
+#include <nav_msgs/Odometry.h>
+#include <nav_msgs/Path.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <tf2_ros/transform_listener.h>
+
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/registration/gicp.h>
+
 #include "utils/pose6DOF.h"
-#include "utils/geometric_utils.h"
 
+class IcpOdometer {
+ public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  using Ptr = std::shared_ptr<IcpOdometer>;
+  // Future idea - Templated class
+  // typedef pcl::PointCloud<PointType> PclPointCloud;
+  // typedef typename pcl::PointCloud<PointType>::Ptr PclPointCloudPtr;
+  // typedef pcl::VoxelGrid<PointType> PclVoxelGrid;
+  // typedef pcl::GeneralizedIterativeClosestPoint<PointType, PointType> GeneralizedIterativeClosestPoint;
 
-class ICPOdometer
-{
-private:
-	// Constants
-	const double ICP_FITNESS_THRESH = 0.1;
-	const double ICP_MAX_CORR_DIST = 1.0;
-	const double ICP_EPSILON = 1e-06;
-	const double ICP_MAX_ITERS = 10;
+  IcpOdometer(const ros::NodeHandle& nh, const ros::NodeHandle& pnh);
 
-	int verbosity_level_;
+  void init();
 
-	bool odom_inited_;
+  void loadParameters();
 
-	// ROS node handle, URDF frames, topics and publishers
-	ros::NodeHandle nh_;
-	std::string laser_frame_, robot_frame_, odom_frame_, map_frame_;
-	std::string laser_cloud_topic_;
-	ros::Subscriber laser_cloud_sub_;
+  void advertisePublishers();
 
-	// Debug topics and publishers
-	std::string prev_cloud_topic_, aligned_cloud_topic_, icp_odom_topic_, icp_odom_path_topic_;
-	ros::Publisher prev_cloud_pub_, aligned_cloud_pub_, icp_odom_pub_, icp_odom_path_pub_;
+  void registerSubscribers();
 
-	// PCL clouds
-	pcl::PointCloud<pcl::PointXYZ>::Ptr prev_cloud_, curr_cloud_;
+  bool isOdomReady() const;
 
-	// Odometry path containers
-	nav_msgs::Path icp_odom_path_;
+  void setInitialPose(const Pose6DOF& initial_pose);
 
-	// Translations and rotations estimated by ICP
-	bool new_transform_;
-	double voxel_leaf_size_;
-	int clouds_skipped_, num_clouds_skip_;
-	bool aggregate_clouds_;
-	Pose6DOF icp_latest_transform_;
-	std::vector<Pose6DOF> icp_odom_poses_;
-	tf::TransformListener tf_listener_;
-	tf::TransformBroadcaster tf_broadcaster_;
+  Pose6DOF getFirstPose() const;
 
-public:
+  Pose6DOF getLatestPose() const;
 
-	ICPOdometer(ros::NodeHandle nh);
+  void getEstimates(
+      ros::Time& stamp, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, Pose6DOF& latest_icp_transform, Pose6DOF& icp_pose,
+      bool& new_transform);
 
-	void init();
+  void voxelFilterCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr* input, pcl::PointCloud<pcl::PointXYZ>::Ptr* output);
 
-	void loadParameters();
+  void publishPath(const ros::Time& stamp);
 
-	void advertisePublishers();
+  bool updateICPOdometry(const ros::Time& stamp, const Eigen::Matrix4d& T);
 
-	void registerSubscribers();
+  void laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg);
 
-	bool isOdomReady();
+ protected:
+  // Constants
+  const double ICP_FITNESS_THRESH = 0.1;
+  const double ICP_MAX_CORR_DIST = 1.0;
+  const double ICP_EPSILON = 1e-06;
+  const double ICP_MAX_ITERS = 10;
 
-	Pose6DOF getFirstPose();
-	
-	Pose6DOF getLatestPose();
+  // ROS node handle, URDF frames, topics and publishers
+  ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
+  std::string laser_frame_;
+  std::string robot_frame_;
+  std::string odom_frame_;
+  std::string map_frame_;
 
-	void getEstimates(pcl::PointCloud<pcl::PointXYZ>::Ptr *cloud, Pose6DOF *latest_icp_transform, Pose6DOF *icp_pose, bool *new_transform);
+  ros::Subscriber laser_cloud_sub_;
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;
 
-	void voxelFilterCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr *input, pcl::PointCloud<pcl::PointXYZ>::Ptr *output);
+  ros::Publisher prev_cloud_pub_;
+  ros::Publisher aligned_cloud_pub_;
+  ros::Publisher icp_odom_pub_;
+  ros::Publisher icp_pose_pub_;
+  ros::Publisher icp_odom_path_pub_;
 
-	void publishPath();
+  // Odometry path containers
+  nav_msgs::Odometry icp_odom_;
+  nav_msgs::Path icp_odom_path_;
 
-	bool updateICPOdometry(Eigen::Matrix4d T);
+  int verbosity_level_;
+  bool initial_pose_set_;
+  bool odom_inited_;
 
-	void laserCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg);
-	
+  // Translations and rotations estimated by ICP
+  bool new_transform_;
+
+  // Cloud skipping and filtering
+  int clouds_skipped_;
+  int num_clouds_skip_;
+  double voxel_leaf_size_;
+
+  // Transforms and intermediate poses
+  ros::Time latest_stamp;
+  Pose6DOF icp_latest_transform_;
+  std::vector<Pose6DOF> icp_odom_poses_;
+
+  // PCL clouds
+  pcl::PointCloud<pcl::PointXYZ>::Ptr prev_cloud_;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr curr_cloud_;
 };
-
-#endif
